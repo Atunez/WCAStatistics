@@ -1,256 +1,106 @@
-Welcome to your new TanStack Start app! 
+# WCA U.S. State Coverage Site
 
-# Getting Started
+Public TanStack Start app for tracking which U.S. states a WCA competitor has competed in, plus a public leaderboard of the top 100 competitors by U.S. state coverage.
 
-To run this application:
+## Product goal
 
-```bash
-npm install
-npm run dev
-```
+The planned V1 experience is:
+- search by WCA ID
+- show visited vs unvisited U.S. states
+- show the last 3 competitions for each state
+- show basic upcoming competitions for unvisited states when available
+- publish a public top-100 leaderboard ordered by visited-state count
 
-# Building For Production
+Primary planning artifacts live in:
+- `.omx/plans/ralplan-wca-us-state-coverage-site.md`
+- `.omx/plans/prd-wca-us-state-coverage-site.md`
+- `.omx/plans/test-spec-wca-us-state-coverage-site.md`
 
-To build this application for production:
+## Current repository status
 
-```bash
-npm run build
-```
+This repository is **not at the WCA product stage yet**. A quick code review of the current app shows that the main product work still needs to be implemented:
 
-## Testing
+### UI / routing
+- `src/routes/index.tsx` is still starter-template marketing content.
+- `src/routes/__root.tsx` still renders a placeholder Mantine header with a `Region Tracker` button and starter page chrome.
+- No competitor-detail route, leaderboard route, or WCA-specific homepage search flow exists yet.
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+### API / server layer
+- `src/routes/api.$.ts`, `src/routes/api.rpc.$.ts`, and `src/orpc/router/*` still expose demo todo/oRPC plumbing.
+- No WCA ingestion, leaderboard, or competitor-query server modules are present yet.
 
-```bash
-npm run test
-```
+### Database layer
+- `src/db/schema.ts` contains early region-tracking primitives only; it does not yet model competitions, state-to-competition mapping, or ingestion runs required by the V1 plan.
+- `src/db/supabase/migrations/schema.ts` currently contains invalid TypeScript (`{this` inside the `regions` table definition) and should not be treated as a trustworthy schema baseline.
+- `drizzle.config.ts` points at `src/db/schema.ts` as the source schema.
 
-## Styling
+### Runtime / deployment
+- `src/env.ts` currently validates only `DATABASE_POOLER_URL` plus optional client title metadata.
+- `wrangler.jsonc` is configured only for the TanStack Start server entry; no scheduled ingestion trigger is defined yet.
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## Recommended implementation order
 
-### Removing Tailwind CSS
+Based on the current repo state and the plan artifacts, the next implementation milestones should be:
 
-If you prefer not to use Tailwind CSS:
+1. **Stabilize the baseline**
+   - restore trustworthy build/test diagnostics
+   - repair, regenerate, or exclude the broken migration helper TS artifact
+2. **Expand the data model**
+   - keep competitor/state coverage dimensions
+   - add competitions, competition-to-state mapping, and ingestion-run tracking
+3. **Build ingestion + query modules**
+   - historical WCA export ingest
+   - separate upcoming-competition enrichment
+   - leaderboard and competitor query layer
+4. **Replace starter UI**
+   - homepage search
+   - competitor detail route
+   - leaderboard route
+5. **Add scheduled execution + operations docs**
+   - scheduled Cloudflare entrypoint
+   - ingestion/recovery/runbook documentation
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `npm install @tailwindcss/vite tailwindcss -D`
+## Local development
 
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
-
-```bash
-npm run lint
-npm run format
-npm run check
-```
-
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "#/env";
-
-console.log(env.VITE_APP_TITLE);
-```
-
-
-
-
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   npx -y @better-auth/cli secret
-   ```
-
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
-
-### Adding a Database (Optional)
-
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-});
-```
-
-Then run migrations:
+Install dependencies and start the dev server:
 
 ```bash
-npx -y @better-auth/cli migrate
+pnpm install
+pnpm dev
 ```
 
+Key project commands:
 
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+```bash
+pnpm build
+pnpm test
+pnpm check
+pnpm db:generate
+pnpm db:push
 ```
 
-Then anywhere in your JSX you can use it like so:
+## Verification guidance
 
-```tsx
-<Link to="/about">About</Link>
+Use these checks before calling feature work complete:
+
+```bash
+npx tsc --noEmit
+pnpm check
+pnpm test
+pnpm build
 ```
 
-This will create a link that will navigate to the `/about` route.
+Feature verification should additionally cover:
+- valid WCA ID lookup
+- not-found WCA ID state
+- visited vs unvisited U.S. state partitioning
+- last-3 historical competitions per state
+- graceful upcoming-competition unavailable states
+- deterministic leaderboard ordering (`visited_state_count DESC`, then `wca_id ASC`)
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+## Notes for future contributors
 
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+- Treat `.omx/plans/`, `.omx/plans/prd-*.md`, and `.omx/plans/test-spec-*.md` as planning inputs, not implementation outputs.
+- Keep `src/db/schema.ts` as the schema authority unless the team intentionally changes that contract.
+- Remove or replace starter/demo surfaces instead of extending them as if they were production WCA features.
+- Keep upcoming-competition enrichment logically separate from historical coverage derivation so future-event failures do not break the core coverage experience.
