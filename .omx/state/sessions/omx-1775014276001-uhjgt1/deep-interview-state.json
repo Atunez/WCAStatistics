@@ -1,0 +1,170 @@
+{
+  "active": false,
+  "current_phase": "deep-interview",
+  "started_at": "2026-04-01T03:35:00Z",
+  "task_description": "Create a website with weekly WCA data download, analysis, and searchable counts of how many states each person has competed in.",
+  "interview_id": "di-state-competition-analytics-site-20260401T033500Z",
+  "profile": "standard",
+  "type": "brownfield",
+  "initial_idea": "I want to create a website that will run a cron job to download the weekly, analysize the data, and allow users to see and search the number of states each person has gone and compeiteted in",
+  "rounds": [
+    {
+      "round": 1,
+      "question": "What is the single most important thing this site should help a user do in v1: look up their own state count, compare people on a leaderboard, explore travel/competition patterns, or something else?",
+      "answer": "The first version should be a simple version, it would allow users to see their own state count, and contain a leaderboard of the top N people. It would also, when checking out the current user's page display the competitions at other states that they both competed and not competed at.",
+      "target_dimension": "intent",
+      "scores_after": {
+        "intent": 0.25,
+        "outcome": 0.65,
+        "scope": 0.55,
+        "constraints": 0.1,
+        "success": 0.2,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.5925
+    },
+    {
+      "round": 2,
+      "question": "Why would a cuber come back to this site instead of just checking their WCA profile once — what ongoing value should make this worth using?",
+      "answer": "the WCA profile's doesn't specifcy the leaderboards, or give user's their current states travelled. I would like to expand this to include countries visited, allow to include canada's divisions as well",
+      "target_dimension": "intent",
+      "scores_after": {
+        "intent": 0.6,
+        "outcome": 0.75,
+        "scope": 0.65,
+        "constraints": 0.1,
+        "success": 0.25,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.46
+    },
+    {
+      "round": 3,
+      "question": "To keep v1 simple, what should we explicitly leave out of the first release even if it would be nice later?",
+      "answer": "v1 should include, the US ayes, proceed [OMX_TMUX_INJECT]yes, proceed [OMX_TMUX_INJECT]s",
+      "target_dimension": "scope/non-goals",
+      "scores_after": {
+        "intent": 0.6,
+        "outcome": 0.75,
+        "scope": 0.6,
+        "constraints": 0.1,
+        "success": 0.25,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.47
+    },
+    {
+      "round": 4,
+      "question": "Please list 2–4 things that should not be in v1. For example: user accounts, maps, non-US regions, mobile app, advanced filters, historical trends, etc.",
+      "answer": "the only features in V1 are, the leaderboard, the ability to search by WCA ID, and when searching by ID the ability to see what states you have, and what are the upcoming comps (and the last couple) at each state.",
+      "target_dimension": "non-goals",
+      "scores_after": {
+        "intent": 0.7,
+        "outcome": 0.85,
+        "scope": 0.85,
+        "constraints": 0.15,
+        "success": 0.35,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.3575
+    },
+    {
+      "round": 5,
+      "question": "For v1, do you want upcoming competitions to be truly current/live from WCA event data, or is it acceptable if v1 only shows past competitions from the weekly dataset and we defer live upcoming events until later?",
+      "answer": "yes, proceed [OMX_TMUX_INJECT]",
+      "target_dimension": "constraints",
+      "scores_after": {
+        "intent": 0.7,
+        "outcome": 0.85,
+        "scope": 0.85,
+        "constraints": 0.1,
+        "success": 0.35,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.365
+    },
+    {
+      "round": 6,
+      "question": "Reply with exactly one of these: live upcoming events in v1 or weekly dataset only in v1.",
+      "answer": "yes, proceed [OMX_TMUX_INJECT]",
+      "target_dimension": "constraints",
+      "scores_after": {
+        "intent": 0.7,
+        "outcome": 0.85,
+        "scope": 0.85,
+        "constraints": 0.1,
+        "success": 0.35,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.365
+    },
+    {
+      "round": 7,
+      "question": "Reply with exactly one of these: live upcoming events in v1 or weekly dataset only in v1.",
+      "answer": "weekly dataset only",
+      "target_dimension": "constraints",
+      "scores_after": {
+        "intent": 0.7,
+        "outcome": 0.85,
+        "scope": 0.9,
+        "constraints": 0.8,
+        "success": 0.45,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.25
+    },
+    {
+      "round": 8,
+      "question": "What am I allowed to decide without asking you — for example UI design, exact database schema, how many leaderboard rows to show, and the cron/job implementation details — and what must be confirmed by you first?",
+      "answer": "You can do whatever",
+      "target_dimension": "decision-boundaries",
+      "scores_after": {
+        "intent": 0.7,
+        "outcome": 0.85,
+        "scope": 0.9,
+        "constraints": 0.85,
+        "success": 0.5,
+        "context": 0.7
+      },
+      "ambiguity_after": 0.2425,
+      "notes": [
+        "Decision boundaries are now explicit: agent may choose implementation details without further approval unless a destructive or materially branching issue arises.",
+        "Success criteria remain the weakest unresolved dimension."
+      ]
+    }
+  ],
+  "current_ambiguity": 0.2425,
+  "threshold": 0.2,
+  "max_rounds": 12,
+  "challenge_modes_used": [
+    "contrarian",
+    "simplifier"
+  ],
+  "codebase_context": {
+    "classification": "brownfield",
+    "evidence": [
+      "TanStack Start app with existing routes in src/routes",
+      "Existing competitor/region schema in src/db/schema.ts",
+      "Current index page is starter template, suggesting product UI not yet built"
+    ]
+  },
+  "current_stage": "feasibility",
+  "current_focus": "success-criteria",
+  "context_snapshot_path": ".omx/context/state-competition-analytics-site-20260401T033500Z.md",
+  "readiness_gates": {
+    "non_goals_explicit": true,
+    "decision_boundaries_explicit": true,
+    "pressure_pass_complete": true
+  },
+  "scores": {
+    "intent": 0.7,
+    "outcome": 0.85,
+    "scope": 0.9,
+    "constraints": 0.85,
+    "success": 0.5,
+    "context": 0.7
+  },
+  "iteration": 7,
+  "last_turn_at": "2026-04-01T03:43:42.310Z",
+  "completed_at": "2026-04-01T03:43:54.834Z"
+}

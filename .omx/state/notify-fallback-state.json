@@ -1,0 +1,64 @@
+{
+  "pid": 76062,
+  "parent_pid": 76047,
+  "started_at": "2026-04-01T05:14:10.456Z",
+  "cwd": "/mnt/d/Projects/wca-statistics",
+  "notify_script": "/home/atunez/.nvm/versions/node/v25.8.0/lib/node_modules/oh-my-codex/dist/scripts/notify-hook.js",
+  "poll_ms": 250,
+  "pid_file": "/mnt/d/Projects/wca-statistics/.omx/state/notify-fallback.pid",
+  "max_lifetime_ms": 21600000,
+  "tracked_files": 16,
+  "seen_turns": 21,
+  "dispatch_drain": {
+    "enabled": true,
+    "max_per_tick": 5,
+    "run_count": 6209,
+    "leader_only": true,
+    "last_tick_at": "2026-04-01T05:51:30.272Z",
+    "last_result": {
+      "processed": 0,
+      "skipped": 0,
+      "failed": 0
+    },
+    "last_error": null
+  },
+  "leader_nudge": {
+    "enabled": true,
+    "leader_only": true,
+    "stale_threshold_ms": 180000,
+    "precomputed_leader_stale": false,
+    "last_tick_at": "2026-04-01T05:51:30.275Z",
+    "last_error": null,
+    "run_count": 6209
+  },
+  "ralph_continue_steer": {
+    "enabled": true,
+    "cadence_ms": 60000,
+    "message": "Ralph loop active continue",
+    "active": false,
+    "last_state_check_at": "2026-04-01T05:51:30.416Z",
+    "last_sent_at": "",
+    "cooldown_anchor_at": "",
+    "last_reason": "blocked_by_current_session",
+    "last_error": null,
+    "state_path": "",
+    "pane_id": "",
+    "pane_current_command": "",
+    "current_phase": "",
+    "shared_timestamp_path": "/mnt/d/Projects/wca-statistics/.omx/state/ralph-last-steer-at",
+    "shared_last_sent_at": "",
+    "singleton_lock_path": "/mnt/d/Projects/wca-statistics/.omx/state/ralph-continue-steer.lock"
+  },
+  "fallback_auto_nudge": {
+    "enabled": true,
+    "stall_ms": 5000,
+    "last_tick_at": "2026-04-01T05:51:30.387Z",
+    "last_turn_at": "2026-04-01T05:51:14.941Z",
+    "last_turn_count": 64,
+    "last_message": "`omx team` failed because the workspace is dirty—these tracked files have uncommitted changes:\n- `.v",
+    "last_reason": "eligible_but_not_sent",
+    "last_error": null,
+    "last_nudged_signature": "hud:63|2026-04-01T05:50:05.242Z|got it planning is complete and the build ready artifacts exist ' omx plans ralplan wca us state",
+    "last_nudged_at": "2026-04-01T05:51:04.320Z"
+  }
+}

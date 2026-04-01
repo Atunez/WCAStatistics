@@ -1,0 +1,175 @@
+{
+  "id": "9537f84d-acac-4eee-b14c-fe5823e88952",
+  "prevId": "0ba85031-98d2-4623-9404-d0302a5ac9c4",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.competitor_regions": {
+      "name": "competitor_regions",
+      "schema": "",
+      "columns": {
+        "competitor_id": {
+          "name": "competitor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "country": {
+          "name": "country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visit_count": {
+          "name": "visit_count",
+          "type": "serial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_competition_id": {
+          "name": "first_competition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_regions_competitor_regions": {
+          "name": "fk_regions_competitor_regions",
+          "tableFrom": "competitor_regions",
+          "tableTo": "regions",
+          "columnsFrom": [
+            "country",
+            "state"
+          ],
+          "columnsTo": [
+            "country",
+            "state"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "competitor_regions_competitor_id_country_state_pk": {
+          "name": "competitor_regions_competitor_id_country_state_pk",
+          "columns": [
+            "competitor_id",
+            "country",
+            "state"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.competitors": {
+      "name": "competitors",
+      "schema": "",
+      "columns": {
+        "wca_id": {
+          "name": "wca_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "home_country": {
+          "name": "home_country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "home_continent": {
+          "name": "home_continent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.regions": {
+      "name": "regions",
+      "schema": "",
+      "columns": {
+        "continent": {
+          "name": "continent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "country": {
+          "name": "country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "us_region": {
+          "name": "us_region",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_competitions": {
+          "name": "total_competitions",
+          "type": "serial",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "regions_country_state_pk": {
+          "name": "regions_country_state_pk",
+          "columns": [
+            "country",
+            "state"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

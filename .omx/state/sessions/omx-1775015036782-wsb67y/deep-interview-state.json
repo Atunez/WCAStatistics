@@ -1,0 +1,41 @@
+{
+  "active": true,
+  "current_phase": "deep-interview",
+  "started_at": "2026-04-01T03:45:40Z",
+  "task_description": "Deep interview for app discovery in /mnt/d/Projects/wca-statistics",
+  "profile": "standard",
+  "type": "brownfield",
+  "initial_idea": "ask me about the app",
+  "rounds": [],
+  "current_ambiguity": 0.83,
+  "threshold": 0.2,
+  "max_rounds": 12,
+  "challenge_modes_used": [],
+  "codebase_context": {
+    "classification": "brownfield",
+    "evidence": [
+      "TanStack Start starter repo with current routes / and /about still template-driven",
+      "Header contains 'Region Tracker' button",
+      "Demo routes exist for auth, drizzle, table, Sentry, and oRPC/OpenAPI"
+    ]
+  },
+  "current_stage": "intent-first",
+  "current_focus": "intent",
+  "context_snapshot_path": ".omx/context/ask-me-about-the-app-20260401T034540Z.md",
+  "scores": {
+    "intent": 0.1,
+    "outcome": 0.15,
+    "scope": 0.1,
+    "constraints": 0.2,
+    "success": 0.1,
+    "context": 0.55
+  },
+  "readiness_gates": {
+    "non_goals_explicit": false,
+    "decision_boundaries_explicit": false,
+    "pressure_pass_complete": false
+  },
+  "interview_id": "b26757c6-8598-41d9-aa0c-c4a6e66faedc",
+  "iteration": 2,
+  "last_turn_at": "2026-04-01T03:46:12.298Z"
+}

@@ -1,0 +1,32 @@
+# Context Snapshot
+
+- Task statement: Create a website that runs a scheduled weekly job, downloads WCA data, analyzes it, and lets users search how many U.S. states each person has competed in.
+- Desired outcome: A clear execution-ready spec for a production-oriented WCA statistics site.
+- Stated solution: Website + cron/scheduled ingestion + weekly data download + analysis + searchable competitor/state counts.
+- Probable intent hypothesis: Turn raw WCA data into a searchable, user-friendly experience focused on geographic competition coverage, likely with automatic refresh and public discovery.
+- Known facts/evidence:
+  - Repo is brownfield: existing TanStack Start/Vite app with routes under `src/routes`.
+  - Existing database schema already models `competitors`, `regions`, and `competitor_regions` in `src/db/schema.ts`.
+  - Current home page is still starter-template content in `src/routes/index.tsx`.
+  - Project includes Drizzle, Postgres, Wrangler, and Cloudflare/Vite tooling via `package.json`.
+  - No visible ingestion pipeline or search UI for WCA stats is implemented yet.
+- Constraints:
+  - No direct implementation during deep-interview mode.
+  - Need explicit non-goals and decision boundaries before handoff.
+  - Brownfield questions should use repo evidence when possible.
+- Unknowns/open questions:
+  - Primary user value: personal lookup, rankings, exploration, or analytics?
+  - Scope of search/filter UX and public pages.
+  - Whether "states" means U.S. states only, or broader regional handling later.
+  - Hosting/runtime expectations for the scheduled job.
+  - Freshness/SLA expectations and failure handling.
+  - Authentication/admin needs.
+- Decision-boundary unknowns:
+  - What OMX may choose without asking (UI styling, DB shape, infra specifics, crawl/storage strategy).
+  - What requires explicit confirmation.
+- Likely codebase touchpoints:
+  - `src/routes/index.tsx` and new route files for public UI
+  - `src/db/schema.ts` and migrations for persisted analytics
+  - server/API routes under `src/routes/api*`
+  - potential server functions / background job entrypoints
+  - Wrangler/Cloudflare deployment config

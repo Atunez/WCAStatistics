@@ -1,0 +1,9 @@
+{
+  "session_id": "omx-1775020450353-1djxl7",
+  "started_at": "2026-04-01T05:14:10.416Z",
+  "cwd": "/mnt/d/Projects/wca-statistics",
+  "pid": 76047,
+  "platform": "linux",
+  "pid_start_ticks": 721055,
+  "pid_cmdline": "node /home/atunez/.nvm/versions/node/v25.8.0/bin/omx --madmax"
+}

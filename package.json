@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
-    "build": "vite build && cp instrument.server.mjs .output/server",
+    "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "deploy": "npm run build && wrangler deploy",
@@ -18,12 +18,13 @@
     "db:studio": "drizzle-kit studio",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check",
-    "start": "node --import ./.output/server/instrument.server.mjs .output/server/index.mjs"
+    "check": "biome check"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.26.0",
     "@faker-js/faker": "^10.3.0",
+    "@mantine/core": "^8.3.18",
+    "@mantine/hooks": "^8.3.18",
     "@orpc/client": "^1.13.6",
     "@orpc/json-schema": "^1.13.6",
     "@orpc/openapi": "^1.13.6",
@@ -49,6 +50,7 @@
     "drizzle-orm": "^0.45.1",
     "lucide-react": "^0.545.0",
     "pg": "^8.16.3",
+    "postgres": "^3.4.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.1.18",
@@ -68,6 +70,7 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "dotenv": "^17.3.1",
     "jsdom": "^28.1.0",
+    "postcss-preset-mantine": "^1.18.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "^7.3.1",
