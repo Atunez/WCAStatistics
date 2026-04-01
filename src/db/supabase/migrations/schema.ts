@@ -16,7 +16,7 @@ export const competitors = pgTable("competitors", {
 
 export const regions = pgTable(
 	"regions",
-	{this
+	{
 		country: text().notNull(),
 		state: text().notNull(),
 		name: text().notNull(),
