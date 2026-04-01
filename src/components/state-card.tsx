@@ -1,18 +1,35 @@
-import type { StateCoverage } from "#/lib/wca-types";
+import type { StateCoverage } from '#/lib/wca-types'
 
 type StateCardProps = {
-  coverage: StateCoverage;
-  variant: "visited" | "unvisited";
-};
+  coverage: StateCoverage
+  variant: 'visited' | 'unvisited'
+}
+
+function formatDateRange(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00Z`)
+  const end = new Date(`${endDate}T00:00:00Z`)
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+
+  if (startDate === endDate) {
+    return formatter.format(start)
+  }
+
+  return `${formatter.format(start)} – ${formatter.format(end)}`
+}
 
 function CompetitionList({
   title,
   emptyLabel,
   items,
 }: {
-  title: string;
-  emptyLabel: string;
-  items: StateCoverage["recentCompetitions"];
+  title: string
+  emptyLabel: string
+  items: StateCoverage['recentCompetitions']
 }) {
   return (
     <div className="space-y-2">
@@ -20,25 +37,25 @@ function CompetitionList({
       {items.length === 0 ? (
         <p className="m-0 text-sm text-[var(--sea-ink-soft)]">{emptyLabel}</p>
       ) : (
-        <ul className="m-0 space-y-2 pl-4 text-sm text-[var(--sea-ink-soft)]">
+        <ul className="m-0 space-y-3 pl-4 text-sm text-[var(--sea-ink-soft)]">
           {items.map((competition) => (
-            <li key={competition.id}>
-              <a href={competition.wcaUrl} target="_blank" rel="noreferrer">
+            <li key={competition.id} className="space-y-1">
+              <a
+                href={competition.wcaUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-[var(--lagoon-deep)]"
+              >
                 {competition.name}
               </a>
               <div>{competition.city}</div>
-              <div>
-                {competition.startDate}
-                {competition.endDate !== competition.startDate
-                  ? ` → ${competition.endDate}`
-                  : ""}
-              </div>
+              <div>{formatDateRange(competition.startDate, competition.endDate)}</div>
             </li>
           ))}
         </ul>
       )}
     </div>
-  );
+  )
 }
 
 export function StateCard({ coverage, variant }: StateCardProps) {
@@ -63,7 +80,7 @@ export function StateCard({ coverage, variant }: StateCardProps) {
           items={coverage.recentCompetitions}
         />
 
-        {variant === "unvisited" ? (
+        {variant === 'unvisited' ? (
           <CompetitionList
             title="Upcoming competitions"
             emptyLabel="No upcoming competitions are currently listed for this state."
@@ -72,5 +89,5 @@ export function StateCard({ coverage, variant }: StateCardProps) {
         ) : null}
       </div>
     </article>
-  );
+  )
 }
