@@ -86,6 +86,9 @@ function buildUpcomingCompetitionSnapshotFromCompetitions(
   }
 
   for (const [stateCode, items] of Object.entries(competitionsByState)) {
+    if (!items) {
+      continue
+    }
     competitionsByState[stateCode] = items.sort(compareAsc).slice(0, 3)
   }
 
