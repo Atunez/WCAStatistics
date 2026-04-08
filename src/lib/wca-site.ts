@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt } from "drizzle-orm";
-import { db } from "#/server/db";
+import { getDb } from "#/server/db";
 import {
 	personCountryRegionSummary,
 	personRegionalCompetitions,
@@ -216,6 +216,7 @@ function makeRegionCoverage(
 }
 
 async function getLatestSuccessfulRun() {
+	const db = getDb();
 	const rows = await withTimeout(
 		db
 			.select({
@@ -237,6 +238,7 @@ export async function getLeaderboardEntries(input?: {
 	scope?: CoverageScope | string | null;
 }): Promise<LeaderboardEntry[]> {
 	try {
+		const db = getDb();
 		const limit = parseLeaderboardLimit(input?.n);
 		const scopeConfig = getCoverageScopeConfig(input?.scope);
 
@@ -308,6 +310,7 @@ export async function getCompetitorPageData(
 	const regions = getRegionsForScope(scope);
 
 	try {
+		const db = getDb();
 		const [personRows, competitionRows, participantRows, latestRun] =
 			await Promise.all([
 				withTimeout(

@@ -70,6 +70,25 @@ Required for ingestion job (prefer direct connection):
 - `DATABASE_DIRECT_URL` (preferred)
 - or `DATABASE_POOLER_URL`
 
+## Cloudflare deployment
+
+The Worker expects database credentials to be configured as Cloudflare secrets,
+not committed as plaintext `vars` in `wrangler.jsonc`.
+
+- Set `DATABASE_POOLER_URL` on the deployed Worker before `pnpm deploy`.
+- Set `DATABASE_DIRECT_URL` too if you want the same environment to support
+  direct-connection maintenance jobs.
+- This repo uses `nodejs_compat` with compatibility date `2025-09-02`, so
+  Cloudflare exposes configured Worker secrets on `process.env` at runtime.
+
+Example:
+
+```bash
+wrangler secret put DATABASE_POOLER_URL
+wrangler secret put DATABASE_DIRECT_URL
+pnpm deploy
+```
+
 ## Verification checklist
 
 - WCA ID lookup resolves known competitors
