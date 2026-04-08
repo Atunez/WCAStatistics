@@ -1,61 +1,109 @@
-import { Link } from '@tanstack/react-router'
-import ThemeToggle from './ThemeToggle'
+import {
+	Badge,
+	Box,
+	Button,
+	Container,
+	Group,
+	Paper,
+	Stack,
+	Text,
+	Title,
+} from "@mantine/core";
+import { Link } from "@tanstack/react-router";
+import { COVERAGE_SCOPE_OPTIONS } from "#/lib/coverage-scopes";
+import ThemeToggle from "./ThemeToggle";
+
+const navItems = [
+	{ to: "/", label: "Search" },
+	{ to: "/leaderboard", label: "Leaderboard" },
+	{ to: "/about", label: "About" },
+] as const;
 
 export default function Header() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--header-bg)] px-4 backdrop-blur-lg">
-      <nav className="page-wrap flex flex-wrap items-center gap-3 py-3 sm:py-4">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-3 rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink)] no-underline shadow-[0_8px_24px_rgba(30,90,72,0.08)]"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--lagoon),#7ed3bf)] text-sm font-bold text-white">
-            50
-          </span>
-          <span>
-            <span className="block text-left text-[11px] uppercase tracking-[0.2em] text-[var(--sea-ink-soft)]">
-              WCA
-            </span>
-            <span className="block">U.S. State Coverage</span>
-          </span>
-        </Link>
+	return (
+		<Box
+			component="header"
+			className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--header-bg)]"
+		>
+			<Container size="xl" px="md" py="md">
+				<Group justify="space-between" align="center" gap="md">
+					<Link to="/" className="no-underline">
+						<Paper className="island-shell px-4 py-3">
+							<Group gap="md" wrap="nowrap">
+								<Badge
+									size="xl"
+									radius="xl"
+									variant="filled"
+									styles={{
+										root: {
+											background:
+												"linear-gradient(135deg,var(--lagoon),#7ed3bf)",
+											color: "#fff",
+											paddingInline: 14,
+											height: 36,
+										},
+									}}
+								>
+									{COVERAGE_SCOPE_OPTIONS.length} scopes
+								</Badge>
+								<Stack gap={2}>
+									<Text
+										size="xs"
+										tt="uppercase"
+										c="dimmed"
+										fw={700}
+									>
+										WCA
+									</Text>
+									<Title order={4} c="var(--sea-ink)">
+										Region Coverage
+									</Title>
+								</Stack>
+							</Group>
+						</Paper>
+					</Link>
 
-        <div className="order-3 flex w-full flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold sm:order-2 sm:w-auto sm:pl-3">
-          <Link
-            to="/"
-            className="nav-link"
-            activeProps={{ className: 'nav-link is-active' }}
-          >
-            Search
-          </Link>
-          <Link
-            to="/leaderboard"
-            className="nav-link"
-            activeProps={{ className: 'nav-link is-active' }}
-          >
-            Leaderboard
-          </Link>
-          <Link
-            to="/about"
-            className="nav-link"
-            activeProps={{ className: 'nav-link is-active' }}
-          >
-            About
-          </Link>
-          <a
-            href="https://www.worldcubeassociation.org/"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link"
-          >
-            WCA
-          </a>
-        </div>
+					<Group gap="xs" visibleFrom="sm">
+						{navItems.map((item) => (
+							<Link
+								key={item.to}
+								to={item.to}
+								className="no-underline"
+							>
+								<Button variant="subtle" color="gray">
+									{item.label}
+								</Button>
+							</Link>
+						))}
+						<Button
+							component="a"
+							href="https://www.worldcubeassociation.org/"
+							target="_blank"
+							rel="noreferrer"
+							variant="subtle"
+							color="gray"
+						>
+							WCA
+						</Button>
+					</Group>
 
-        <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
-        </div>
-      </nav>
-    </header>
-  )
+					<ThemeToggle />
+				</Group>
+
+				<Group gap="xs" hiddenFrom="sm" mt="md">
+					{navItems.map((item) => (
+						<Link
+							key={item.to}
+							to={item.to}
+							className="no-underline"
+						>
+							<Button size="xs" variant="light" color="teal">
+								{item.label}
+							</Button>
+						</Link>
+					))}
+				</Group>
+			</Container>
+		</Box>
+	);
 }

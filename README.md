@@ -1,75 +1,45 @@
-# WCA U.S. State Coverage Site
+# WCA Region Coverage
 
-Public TanStack Start app for tracking which U.S. states a WCA competitor has competed in, plus a public leaderboard of the top 100 competitors by U.S. state coverage.
+Public TanStack Start app for:
+- searching competitors by WCA ID
+- counting region coverage across the United States, Canada, and England
+- showing visited vs unvisited regions within the selected scope
+- publishing a top-N leaderboard by visited regions within each scope
 
-## Product goal
+Historical data is sourced from the official weekly WCA export:
+`https://www.worldcubeassociation.org/api/v0/export/public`
 
-The planned V1 experience is:
-- search by WCA ID
-- show visited vs unvisited U.S. states
-- show the last 3 competitions for each state
-- show basic upcoming competitions for unvisited states when available
-- publish a public top-100 leaderboard ordered by visited-state count
+## Data pipeline
 
-Primary planning artifacts live in:
-- `.omx/plans/ralplan-wca-us-state-coverage-site.md`
-- `.omx/plans/prd-wca-us-state-coverage-site.md`
-- `.omx/plans/test-spec-wca-us-state-coverage-site.md`
+The project now uses a DB-backed weekly ingestion pipeline:
 
-## Current repository status
+1. Fetch latest export metadata (`export_date`, `tsv_url`)
+2. Download and parse the TSV ZIP
+3. Ingest:
+   - `WCA_export_persons.tsv`
+   - `WCA_export_competitions.tsv`
+   - `WCA_export_results.tsv`
+4. Build and persist:
+   - `wca_people`
+   - `wca_regions`
+   - `regional_competitions`
+   - `person_regional_competitions`
+   - `person_country_region_summary`
+   - `wca_export_runs` (run status/metrics)
 
-This repository is **not at the WCA product stage yet**. A quick code review of the current app shows that the main product work still needs to be implemented:
-
-### UI / routing
-- `src/routes/index.tsx` is still starter-template marketing content.
-- `src/routes/__root.tsx` still renders a placeholder Mantine header with a `Region Tracker` button and starter page chrome.
-- No competitor-detail route, leaderboard route, or WCA-specific homepage search flow exists yet.
-
-### API / server layer
-- `src/routes/api.$.ts`, `src/routes/api.rpc.$.ts`, and `src/orpc/router/*` still expose demo todo/oRPC plumbing.
-- No WCA ingestion, leaderboard, or competitor-query server modules are present yet.
-
-### Database layer
-- `src/db/schema.ts` contains early region-tracking primitives only; it does not yet model competitions, state-to-competition mapping, or ingestion runs required by the V1 plan.
-- `src/db/supabase/migrations/schema.ts` currently contains invalid TypeScript (`{this` inside the `regions` table definition) and should not be treated as a trustworthy schema baseline.
-- `drizzle.config.ts` points at `src/db/schema.ts` as the source schema.
-
-### Runtime / deployment
-- `src/env.ts` currently validates only `DATABASE_POOLER_URL` plus optional client title metadata.
-- `wrangler.jsonc` is configured only for the TanStack Start server entry; no scheduled ingestion trigger is defined yet.
-
-## Recommended implementation order
-
-Based on the current repo state and the plan artifacts, the next implementation milestones should be:
-
-1. **Stabilize the baseline**
-   - restore trustworthy build/test diagnostics
-   - repair, regenerate, or exclude the broken migration helper TS artifact
-2. **Expand the data model**
-   - keep competitor/state coverage dimensions
-   - add competitions, competition-to-state mapping, and ingestion-run tracking
-3. **Build ingestion + query modules**
-   - historical WCA export ingest
-   - separate upcoming-competition enrichment
-   - leaderboard and competitor query layer
-4. **Replace starter UI**
-   - homepage search
-   - competitor detail route
-   - leaderboard route
-5. **Add scheduled execution + operations docs**
-   - scheduled Cloudflare entrypoint
-   - ingestion/recovery/runbook documentation
+Scheduler:
+- GitHub Actions workflow at `.github/workflows/wca-weekly-ingest.yml`
+- Runs weekly (Monday UTC) and supports manual dispatch
+- Uses the same cron entrypoint as local one-shot execution
 
 ## Local development
-
-Install dependencies and start the dev server:
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Key project commands:
+## Commands
 
 ```bash
 pnpm build
@@ -77,30 +47,36 @@ pnpm test
 pnpm check
 pnpm db:generate
 pnpm db:push
+pnpm ingest:wca-weekly
+pnpm cron:wca-once
+pnpm cron:wca-local
 ```
 
-## Verification guidance
+Cron usage:
+- `pnpm cron:wca-once` runs one ingestion immediately (used in deployed workflow).
+- `pnpm cron:wca-local` starts a local scheduler that triggers at `WCA_CRON` (default `0 6 * * 1`, UTC).
+- Optional env for local scheduler:
+  - `WCA_CRON` (supported format: `m h * * d`)
+  - `WCA_CRON_POLL_MS` (default `30000`)
+- For quick local testing:
+  - set `WCA_CRON` to the next UTC minute/hour or use `pnpm cron:wca-once`.
 
-Use these checks before calling feature work complete:
+## Environment variables
 
-```bash
-npx tsc --noEmit
-pnpm check
-pnpm test
-pnpm build
-```
+Required for app/runtime queries:
+- `DATABASE_POOLER_URL`
 
-Feature verification should additionally cover:
-- valid WCA ID lookup
-- not-found WCA ID state
-- visited vs unvisited U.S. state partitioning
-- last-3 historical competitions per state
-- graceful upcoming-competition unavailable states
-- deterministic leaderboard ordering (`visited_state_count DESC`, then `wca_id ASC`)
+Required for ingestion job (prefer direct connection):
+- `DATABASE_DIRECT_URL` (preferred)
+- or `DATABASE_POOLER_URL`
 
-## Notes for future contributors
+## Verification checklist
 
-- Treat `.omx/plans/`, `.omx/plans/prd-*.md`, and `.omx/plans/test-spec-*.md` as planning inputs, not implementation outputs.
-- Keep `src/db/schema.ts` as the schema authority unless the team intentionally changes that contract.
-- Remove or replace starter/demo surfaces instead of extending them as if they were production WCA features.
-- Keep upcoming-competition enrichment logically separate from historical coverage derivation so future-event failures do not break the core coverage experience.
+- WCA ID lookup resolves known competitors
+- Unknown WCA ID shows not-found state
+- Leaderboard supports `?n=` and clamps to `1..500`
+- Ordering is deterministic:
+  - `visited_regions_count DESC`
+  - `wca_id ASC`
+- Weekly ingestion is idempotent for already-succeeded exports
+- Failed runs preserve last successful dataset

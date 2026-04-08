@@ -16,6 +16,9 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
+    "ingest:wca-weekly": "tsx scripts/ingest-wca-weekly.ts",
+    "cron:wca-local": "tsx scripts/run-wca-cron.ts",
+    "cron:wca-once": "tsx scripts/run-wca-cron.ts --once",
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check"
@@ -31,7 +34,6 @@
     "@orpc/server": "^1.13.6",
     "@orpc/tanstack-query": "^1.13.6",
     "@orpc/zod": "^1.13.6",
-    "@sentry/tanstackstart-react": "^10.42.0",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/match-sorter-utils": "latest",

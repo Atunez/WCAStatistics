@@ -40,7 +40,5 @@
 		"**/*.sass",
 		"**/*.less",
 		"node_modules/@mantine/core/styles.css"
-	],
-	"terminal.integrated.shellIntegration.enabled": false,
-	"terminal.integrated.shellIntegration.decorationsEnabled": "never"
+	]
 }

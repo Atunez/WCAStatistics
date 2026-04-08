@@ -186,6 +186,31 @@ pre code {
   border-color: color-mix(in oklab, var(--lagoon-deep) 35%, var(--line));
 }
 
+.state-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 1200px;
+}
+
+.state-grid {
+  align-items: start;
+}
+
+.state-card-shell {
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--surface-strong) 96%, white 4%),
+    color-mix(in oklab, var(--surface) 94%, white 6%)
+  );
+  box-shadow:
+    0 1px 0 var(--inset-glint) inset,
+    0 10px 22px rgba(23, 58, 64, 0.07),
+    0 2px 8px rgba(23, 58, 64, 0.05);
+  backdrop-filter: none;
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 360px;
+}
+
 button,
 .island-shell,
 a {

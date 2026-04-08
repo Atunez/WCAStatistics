@@ -1,50 +1,75 @@
-import { createFileRoute } from '@tanstack/react-router'
+import {
+	Container,
+	Paper,
+	SimpleGrid,
+	Stack,
+	Text,
+	Title,
+} from "@mantine/core";
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/about')({
-  component: About,
-})
+export const Route = createFileRoute("/about")({
+	component: About,
+});
 
 function About() {
-  return (
-    <main className="page-wrap px-4 py-12">
-      <section className="island-shell rounded-[2rem] px-6 py-8 sm:px-10 sm:py-10">
-        <p className="island-kicker mb-3">About the project</p>
-        <h1 className="display-title mb-4 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-          A public tracker for U.S. competition coverage.
-        </h1>
-        <p className="max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
-          This site is focused on one question: which U.S. states has a WCA
-          competitor already competed in? Enter a WCA ID to see visited versus
-          unvisited states, recent competitions in each state, and a simple look
-          at upcoming competitions where coverage is still missing.
-        </p>
-      </section>
+	return (
+		<Container size="xl" px="md" py="xl">
+			<Stack gap="xl">
+				<Paper
+					className="island-shell"
+					radius="32px"
+					p={{ base: "xl", sm: "3rem" }}
+				>
+					<Stack gap="md">
+						<Text
+							size="xs"
+							tt="uppercase"
+							fw={700}
+							c="var(--kicker)"
+						>
+							About the project
+						</Text>
+						<Title order={1}>
+							A public tracker for multi-country region coverage.
+						</Title>
+						<Text size="lg" c="dimmed" maw={760}>
+							This site tracks official WCA competition coverage
+							across three scopes: the United States, Canada, and
+							England. Enter a WCA ID to see visited versus
+							unvisited regions, recent competitions in each
+							region, and a simple look at upcoming competitions
+							where coverage is still missing.
+						</Text>
+					</Stack>
+				</Paper>
 
-      <section className="mt-8 grid gap-4 lg:grid-cols-3">
-        {[
-          [
-            'Historical coverage',
-            'Visited states are derived from official WCA competition participation and limited to the 50 U.S. states.',
-          ],
-          [
-            'Upcoming competitions',
-            'Future competitions are informational only. If the source is unavailable, the historical coverage view still renders.',
-          ],
-          [
-            'Public leaderboard',
-            'The leaderboard is fixed to the top 100 competitors, ordered deterministically by visited-state count and then WCA ID.',
-          ],
-        ].map(([title, description]) => (
-          <article key={title} className="island-shell rounded-2xl p-5">
-            <h2 className="mb-2 text-lg font-semibold text-[var(--sea-ink)]">
-              {title}
-            </h2>
-            <p className="m-0 text-sm leading-6 text-[var(--sea-ink-soft)]">
-              {description}
-            </p>
-          </article>
-        ))}
-      </section>
-    </main>
-  )
+				<SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
+					{[
+						[
+							"Historical coverage",
+							"Visited regions are derived from official WCA competition participation and currently cover 55 U.S. regions, 13 Canadian regions, and 48 English ceremonial counties.",
+						],
+						[
+							"Upcoming competitions",
+							"Future competitions are informational only. If the source is unavailable, the historical coverage view still renders.",
+						],
+						[
+							"Public leaderboard",
+							"The leaderboard is fixed to the top 100 competitors within the selected scope, ordered deterministically by visited-region count and then WCA ID.",
+						],
+					].map(([title, description]) => (
+						<Paper key={title} className="island-shell" p="lg">
+							<Stack gap="xs">
+								<Title order={3}>{title}</Title>
+								<Text size="sm" c="dimmed" lh={1.7}>
+									{description}
+								</Text>
+							</Stack>
+						</Paper>
+					))}
+				</SimpleGrid>
+			</Stack>
+		</Container>
+	);
 }

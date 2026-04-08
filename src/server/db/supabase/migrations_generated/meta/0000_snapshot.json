@@ -1,0 +1,819 @@
+{
+  "id": "12899b15-3caf-434a-a873-f667cb878467",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.person_country_region_summary": {
+      "name": "person_country_region_summary",
+      "schema": "",
+      "columns": {
+        "wca_id": {
+          "name": "wca_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "country_iso2": {
+          "name": "country_iso2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visited_regions_count": {
+          "name": "visited_regions_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "country_competitions_count": {
+          "name": "country_competitions_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "person_country_region_summary_rank_idx": {
+          "name": "person_country_region_summary_rank_idx",
+          "columns": [
+            {
+              "expression": "country_iso2",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visited_regions_count",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "wca_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "person_country_region_summary_wca_id_wca_people_wca_id_fk": {
+          "name": "person_country_region_summary_wca_id_wca_people_wca_id_fk",
+          "tableFrom": "person_country_region_summary",
+          "tableTo": "wca_people",
+          "columnsFrom": [
+            "wca_id"
+          ],
+          "columnsTo": [
+            "wca_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "person_country_region_summary_wca_id_country_iso2_pk": {
+          "name": "person_country_region_summary_wca_id_country_iso2_pk",
+          "columns": [
+            "wca_id",
+            "country_iso2"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.person_regional_competitions": {
+      "name": "person_regional_competitions",
+      "schema": "",
+      "columns": {
+        "wca_id": {
+          "name": "wca_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competition_id": {
+          "name": "competition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "person_regional_competitions_wca_id_idx": {
+          "name": "person_regional_competitions_wca_id_idx",
+          "columns": [
+            {
+              "expression": "wca_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "person_regional_competitions_competition_id_idx": {
+          "name": "person_regional_competitions_competition_id_idx",
+          "columns": [
+            {
+              "expression": "competition_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "person_regional_competitions_wca_id_wca_people_wca_id_fk": {
+          "name": "person_regional_competitions_wca_id_wca_people_wca_id_fk",
+          "tableFrom": "person_regional_competitions",
+          "tableTo": "wca_people",
+          "columnsFrom": [
+            "wca_id"
+          ],
+          "columnsTo": [
+            "wca_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "person_regional_competitions_competition_id_regional_competitions_competition_id_fk": {
+          "name": "person_regional_competitions_competition_id_regional_competitions_competition_id_fk",
+          "tableFrom": "person_regional_competitions",
+          "tableTo": "regional_competitions",
+          "columnsFrom": [
+            "competition_id"
+          ],
+          "columnsTo": [
+            "competition_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "person_regional_competitions_wca_id_competition_id_pk": {
+          "name": "person_regional_competitions_wca_id_competition_id_pk",
+          "columns": [
+            "wca_id",
+            "competition_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.person_us_competitions": {
+      "name": "person_us_competitions",
+      "schema": "",
+      "columns": {
+        "wca_id": {
+          "name": "wca_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competition_id": {
+          "name": "competition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "person_us_competitions_wca_id_idx": {
+          "name": "person_us_competitions_wca_id_idx",
+          "columns": [
+            {
+              "expression": "wca_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "person_us_competitions_wca_id_wca_people_wca_id_fk": {
+          "name": "person_us_competitions_wca_id_wca_people_wca_id_fk",
+          "tableFrom": "person_us_competitions",
+          "tableTo": "wca_people",
+          "columnsFrom": [
+            "wca_id"
+          ],
+          "columnsTo": [
+            "wca_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "person_us_competitions_competition_id_us_competitions_competition_id_fk": {
+          "name": "person_us_competitions_competition_id_us_competitions_competition_id_fk",
+          "tableFrom": "person_us_competitions",
+          "tableTo": "us_competitions",
+          "columnsFrom": [
+            "competition_id"
+          ],
+          "columnsTo": [
+            "competition_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "person_us_competitions_wca_id_competition_id_pk": {
+          "name": "person_us_competitions_wca_id_competition_id_pk",
+          "columns": [
+            "wca_id",
+            "competition_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.person_us_state_summary": {
+      "name": "person_us_state_summary",
+      "schema": "",
+      "columns": {
+        "wca_id": {
+          "name": "wca_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "visited_states_count": {
+          "name": "visited_states_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "us_competitions_count": {
+          "name": "us_competitions_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "person_us_state_summary_rank_idx": {
+          "name": "person_us_state_summary_rank_idx",
+          "columns": [
+            {
+              "expression": "visited_states_count",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "wca_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "person_us_state_summary_wca_id_wca_people_wca_id_fk": {
+          "name": "person_us_state_summary_wca_id_wca_people_wca_id_fk",
+          "tableFrom": "person_us_state_summary",
+          "tableTo": "wca_people",
+          "columnsFrom": [
+            "wca_id"
+          ],
+          "columnsTo": [
+            "wca_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.regional_competitions": {
+      "name": "regional_competitions",
+      "schema": "",
+      "columns": {
+        "competition_id": {
+          "name": "competition_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "country_iso2": {
+          "name": "country_iso2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "region_code": {
+          "name": "region_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city_name": {
+          "name": "city_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "venue_address": {
+          "name": "venue_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancelled": {
+          "name": "cancelled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "regional_competitions_country_region_start_idx": {
+          "name": "regional_competitions_country_region_start_idx",
+          "columns": [
+            {
+              "expression": "country_iso2",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "region_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "regional_competitions_country_start_idx": {
+          "name": "regional_competitions_country_start_idx",
+          "columns": [
+            {
+              "expression": "country_iso2",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "regional_competitions_country_region_fk": {
+          "name": "regional_competitions_country_region_fk",
+          "tableFrom": "regional_competitions",
+          "tableTo": "wca_regions",
+          "columnsFrom": [
+            "country_iso2",
+            "region_code"
+          ],
+          "columnsTo": [
+            "country_iso2",
+            "region_code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.us_competitions": {
+      "name": "us_competitions",
+      "schema": "",
+      "columns": {
+        "competition_id": {
+          "name": "competition_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city_name": {
+          "name": "city_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "venue_address": {
+          "name": "venue_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state_code": {
+          "name": "state_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancelled": {
+          "name": "cancelled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.wca_export_runs": {
+      "name": "wca_export_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "wca_export_runs_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "export_date": {
+          "name": "export_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "export_format_version": {
+          "name": "export_format_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tsv_url": {
+          "name": "tsv_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "wca_export_run_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "people_count": {
+          "name": "people_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "competitions_count": {
+          "name": "competitions_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "person_competition_pairs_count": {
+          "name": "person_competition_pairs_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "states_mapped_count": {
+          "name": "states_mapped_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "skipped_reason": {
+          "name": "skipped_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "wca_export_runs_export_date_unique": {
+          "name": "wca_export_runs_export_date_unique",
+          "columns": [
+            {
+              "expression": "export_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "wca_export_runs_status_started_idx": {
+          "name": "wca_export_runs_status_started_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.wca_people": {
+      "name": "wca_people",
+      "schema": "",
+      "columns": {
+        "wca_id": {
+          "name": "wca_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "country_id": {
+          "name": "country_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.wca_regions": {
+      "name": "wca_regions",
+      "schema": "",
+      "columns": {
+        "country_iso2": {
+          "name": "country_iso2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "region_code": {
+          "name": "region_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "region_name": {
+          "name": "region_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "region_level": {
+          "name": "region_level",
+          "type": "region_level",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_selectable": {
+          "name": "is_selectable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "wca_regions_country_selectable_idx": {
+          "name": "wca_regions_country_selectable_idx",
+          "columns": [
+            {
+              "expression": "country_iso2",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_selectable",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "wca_regions_country_iso2_region_code_pk": {
+          "name": "wca_regions_country_iso2_region_code_pk",
+          "columns": [
+            "country_iso2",
+            "region_code"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.region_level": {
+      "name": "region_level",
+      "schema": "public",
+      "values": [
+        "country",
+        "subnational"
+      ]
+    },
+    "public.wca_export_run_status": {
+      "name": "wca_export_run_status",
+      "schema": "public",
+      "values": [
+        "started",
+        "succeeded",
+        "failed",
+        "skipped"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

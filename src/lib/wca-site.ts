@@ -1,232 +1,474 @@
-import { leaderboardGeneratedAt, leaderboardSnapshot } from '#/data/leaderboard-snapshot'
-import { buildCompetitionCatalog, extractUsStateFromCompetition } from './wca-coverage'
-import { getPersonByWcaId, getUsCompetitionCatalog } from './wca-source'
-import { US_STATES } from './us-states'
+import { and, asc, desc, eq, gt } from "drizzle-orm";
+import { db } from "#/server/db";
+import {
+	personCountryRegionSummary,
+	personRegionalCompetitions,
+	regionalCompetitions,
+	wcaExportRuns,
+	wcaPeople,
+} from "#/server/db/schema";
+import {
+	type CoverageScope,
+	getCoverageScopeConfig,
+	getRegionsForScope,
+} from "./coverage-scopes";
+import { parseLeaderboardLimit } from "./leaderboard-limit";
 import type {
-  CompetitionSummary,
-  LeaderboardEntry,
-  StateCoverage,
-  WcaCompetition,
-  WcaPerson,
-} from './wca-types'
+	CompetitionSummary,
+	LeaderboardEntry,
+	RegionCoverage,
+} from "./wca-types";
 
-const RAW_BASE =
-  'https://raw.githubusercontent.com/robiningelbrecht/wca-rest-api/master/api'
-const US_COMPETITIONS_URL = `${RAW_BASE}/competitions/US.json`
-const WCA_COMPETITION_URL = 'https://www.worldcubeassociation.org/competitions'
+const WCA_COMPETITION_URL = "https://www.worldcubeassociation.org/competitions";
+const DATABASE_QUERY_TIMEOUT_MS = 8_000;
 
-type CompetitionCatalog = ReturnType<typeof buildCompetitionCatalog>
+type CompetitionCatalog = Map<
+	string,
+	{
+		recentCompetitions: CompetitionSummary[];
+		upcomingCompetitions: CompetitionSummary[];
+	}
+>;
 
 export type UpcomingCompetitionSnapshot = {
-  status: 'ok' | 'degraded'
-  competitionsByState: Partial<Record<string, CompetitionSummary[]>>
-  fetchedAt: string
-  sourceItemCount: number
-  error?: string
-}
+	status: "ok" | "degraded";
+	competitionsByRegion: Partial<Record<string, CompetitionSummary[]>>;
+	fetchedAt: string;
+	sourceItemCount: number;
+	error?: string;
+};
 
 export type CompetitorPageData = {
-  competitor: {
-    wcaId: string
-    name: string
-    countryCode: string
-    totalCompetitions: number
-  } | null
-  visitedStatesCount: number
-  totalStates: number
-  visitedStates: StateCoverage[]
-  unvisitedStates: StateCoverage[]
-  historicalSourceUpdatedAt: string | null
-  upcomingSourceUpdatedAt: string | null
-  upcomingStatus: UpcomingCompetitionSnapshot['status']
-  upcomingError?: string
-}
+	scope: CoverageScope;
+	scopeLabel: string;
+	regionLabelPlural: string;
+	competitor: {
+		wcaId: string;
+		name: string;
+		countryCode: string;
+		totalCompetitions: number;
+	} | null;
+	visitedRegionsCount: number;
+	totalRegions: number;
+	visitedRegions: RegionCoverage[];
+	unvisitedRegions: RegionCoverage[];
+	historicalSourceUpdatedAt: string | null;
+	upcomingSourceUpdatedAt: string | null;
+	upcomingStatus: UpcomingCompetitionSnapshot["status"];
+	upcomingError?: string;
+};
 
 function compareAsc(a: CompetitionSummary, b: CompetitionSummary) {
-  return a.startDate.localeCompare(b.startDate) || a.id.localeCompare(b.id)
+	return a.startDate.localeCompare(b.startDate) || a.id.localeCompare(b.id);
 }
 
 function compareDesc(a: CompetitionSummary, b: CompetitionSummary) {
-  return compareAsc(b, a)
+	return compareAsc(b, a);
 }
 
-function buildUpcomingCompetitionSnapshotFromCompetitions(
-  competitions: WcaCompetition[],
-  todayIso = new Date().toISOString().slice(0, 10),
-  fetchedAt = new Date().toISOString(),
-): UpcomingCompetitionSnapshot {
-  const competitionsByState: Partial<Record<string, CompetitionSummary[]>> = {}
+async function withTimeout<T>(
+	promise: Promise<T>,
+	label: string,
+	timeoutMs = DATABASE_QUERY_TIMEOUT_MS,
+): Promise<T> {
+	let timeoutId: ReturnType<typeof setTimeout> | undefined;
+	const timeout = new Promise<never>((_, reject) => {
+		timeoutId = setTimeout(() => {
+			reject(new Error(`Timed out while waiting for ${label}.`));
+		}, timeoutMs);
+	});
 
-  for (const competition of competitions) {
-    if (competition.country !== 'US' || competition.isCanceled) {
-      continue
-    }
-
-    if (competition.date.from < todayIso) {
-      continue
-    }
-
-    const state = extractUsStateFromCompetition(competition)
-    if (!state) {
-      continue
-    }
-
-    const stateBucket = competitionsByState[state.code] ?? []
-    stateBucket.push({
-      id: competition.id,
-      name: competition.name,
-      city: competition.city,
-      stateCode: state.code,
-      stateName: state.name,
-      startDate: competition.date.from,
-      endDate: competition.date.till,
-      wcaUrl: `${WCA_COMPETITION_URL}/${competition.id}`,
-    })
-    competitionsByState[state.code] = stateBucket
-  }
-
-  for (const [stateCode, items] of Object.entries(competitionsByState)) {
-    if (!items) {
-      continue
-    }
-    competitionsByState[stateCode] = items.sort(compareAsc).slice(0, 3)
-  }
-
-  return {
-    status: 'ok',
-    competitionsByState,
-    fetchedAt,
-    sourceItemCount: competitions.length,
-  }
+	try {
+		return await Promise.race([promise, timeout]);
+	} finally {
+		if (timeoutId) {
+			clearTimeout(timeoutId);
+		}
+	}
 }
 
-export async function getUpcomingCompetitionSnapshot(): Promise<UpcomingCompetitionSnapshot> {
-  const fetchedAt = new Date().toISOString()
+function toIsoTimestamp(
+	value: Date | string | null | undefined,
+): string | null {
+	if (!value) {
+		return null;
+	}
 
-  try {
-    const response = await fetch(US_COMPETITIONS_URL, {
-      headers: {
-        Accept: 'application/json',
-      },
-    })
+	if (value instanceof Date) {
+		return value.toISOString();
+	}
 
-    if (!response.ok) {
-      return {
-        status: 'degraded',
-        competitionsByState: {},
-        fetchedAt,
-        sourceItemCount: 0,
-        error: `Unexpected upcoming feed status: ${response.status}`,
-      }
-    }
+	const normalized = new Date(value);
+	if (Number.isNaN(normalized.getTime())) {
+		return null;
+	}
 
-    const payload = (await response.json()) as { items: WcaCompetition[] }
-    return buildUpcomingCompetitionSnapshotFromCompetitions(
-      payload.items,
-      fetchedAt.slice(0, 10),
-      fetchedAt,
-    )
-  } catch (error) {
-    return {
-      status: 'degraded',
-      competitionsByState: {},
-      fetchedAt,
-      sourceItemCount: 0,
-      error: error instanceof Error ? error.message : 'Unknown upcoming feed error',
-    }
-  }
+	return normalized.toISOString();
 }
 
-function makeStateCoverage(
-  stateCode: string,
-  catalog: CompetitionCatalog,
-  upcomingCompetitionsByState: Partial<Record<string, CompetitionSummary[]>>,
-): StateCoverage {
-  const state = US_STATES.find((entry) => entry.code === stateCode)
-  const historicalBucket = catalog.byStateCode.get(stateCode)
-
-  return {
-    stateCode,
-    stateName: state?.name ?? stateCode,
-    recentCompetitions:
-      historicalBucket?.recentCompetitions.slice().sort(compareDesc).slice(0, 3) ?? [],
-    upcomingCompetitions:
-      upcomingCompetitionsByState[stateCode]?.slice().sort(compareAsc).slice(0, 3) ?? [],
-  }
+function normalizeWcaId(value: string) {
+	return value.trim().toUpperCase();
 }
 
-export function buildCompetitorPageData(
-  person: WcaPerson | null,
-  catalog: CompetitionCatalog,
-  upcomingSnapshot: UpcomingCompetitionSnapshot,
-): CompetitorPageData {
-  if (!person) {
-    return {
-      competitor: null,
-      visitedStatesCount: 0,
-      totalStates: US_STATES.length,
-      visitedStates: [],
-      unvisitedStates: US_STATES.map((state) =>
-        makeStateCoverage(state.code, catalog, upcomingSnapshot.competitionsByState),
-      ),
-      historicalSourceUpdatedAt: catalog.sourceUpdatedAt,
-      upcomingSourceUpdatedAt: upcomingSnapshot.fetchedAt,
-      upcomingStatus: upcomingSnapshot.status,
-      upcomingError: upcomingSnapshot.error,
-    }
-  }
+function normalizeDate(value: Date | string): string {
+	if (value instanceof Date) {
+		return value.toISOString().slice(0, 10);
+	}
 
-  const visitedStates = new Set<string>()
-  for (const competitionId of person.competitionIds) {
-    const competition = catalog.byCompetitionId.get(competitionId)
-    if (competition) {
-      visitedStates.add(competition.stateCode)
-    }
-  }
+	return value;
+}
 
-  const visitedStateCodes = [...visitedStates].sort((a, b) => a.localeCompare(b))
-  const unvisitedStateCodes = US_STATES.map((state) => state.code).filter(
-    (stateCode) => !visitedStates.has(stateCode),
-  )
+function mapCompetitionRow(
+	row: {
+		competitionId: string;
+		name: string;
+		cityName: string;
+		regionCode: string;
+		startDate: Date | string;
+		endDate: Date | string;
+	},
+	regionsByCode: ReadonlyMap<string, { code: string; name: string }>,
+) {
+	const region = regionsByCode.get(row.regionCode);
 
-  return {
-    competitor: {
-      wcaId: person.id,
-      name: person.name,
-      countryCode: person.country,
-      totalCompetitions: person.numberOfCompetitions,
-    },
-    visitedStatesCount: visitedStateCodes.length,
-    totalStates: US_STATES.length,
-    visitedStates: visitedStateCodes.map((stateCode) =>
-      makeStateCoverage(stateCode, catalog, upcomingSnapshot.competitionsByState),
-    ),
-    unvisitedStates: unvisitedStateCodes.map((stateCode) =>
-      makeStateCoverage(stateCode, catalog, upcomingSnapshot.competitionsByState),
-    ),
-    historicalSourceUpdatedAt: catalog.sourceUpdatedAt,
-    upcomingSourceUpdatedAt: upcomingSnapshot.fetchedAt,
-    upcomingStatus: upcomingSnapshot.status,
-    upcomingError: upcomingSnapshot.error,
-  }
+	return {
+		id: row.competitionId,
+		name: row.name,
+		city: row.cityName,
+		regionCode: row.regionCode,
+		regionName: region?.name ?? row.regionCode,
+		startDate: normalizeDate(row.startDate),
+		endDate: normalizeDate(row.endDate),
+		wcaUrl: `${WCA_COMPETITION_URL}/${row.competitionId}`,
+	} satisfies CompetitionSummary;
+}
+
+function buildRegionCatalog(input: {
+	rows: Array<{
+		competitionId: string;
+		name: string;
+		cityName: string;
+		regionCode: string;
+		startDate: Date | string;
+		endDate: Date | string;
+	}>;
+	regions: readonly { code: string; name: string }[];
+	todayIso?: string;
+}) {
+	const todayIso = input.todayIso ?? new Date().toISOString().slice(0, 10);
+	const regionsByCode = new Map(
+		input.regions.map((region) => [region.code, region]),
+	);
+	const catalog: CompetitionCatalog = new Map(
+		input.regions.map((region) => [
+			region.code,
+			{
+				recentCompetitions: [] as CompetitionSummary[],
+				upcomingCompetitions: [] as CompetitionSummary[],
+			},
+		]),
+	);
+
+	const byCompetitionId = new Map<string, CompetitionSummary>();
+	for (const row of input.rows) {
+		const summary = mapCompetitionRow(row, regionsByCode);
+		byCompetitionId.set(summary.id, summary);
+
+		const bucket = catalog.get(summary.regionCode);
+		if (!bucket) {
+			continue;
+		}
+
+		if (summary.startDate >= todayIso) {
+			bucket.upcomingCompetitions.push(summary);
+			continue;
+		}
+
+		bucket.recentCompetitions.push(summary);
+	}
+
+	for (const bucket of catalog.values()) {
+		bucket.recentCompetitions.sort(compareDesc);
+		bucket.upcomingCompetitions.sort(compareAsc);
+	}
+
+	return {
+		catalog,
+		byCompetitionId,
+		regionsByCode,
+	};
+}
+
+function makeRegionCoverage(
+	regionCode: string,
+	regionsByCode: ReadonlyMap<string, { code: string; name: string }>,
+	catalog: CompetitionCatalog,
+): RegionCoverage {
+	const region = regionsByCode.get(regionCode);
+	const bucket = catalog.get(regionCode);
+
+	return {
+		regionCode,
+		regionName: region?.name ?? regionCode,
+		recentCompetitions: bucket?.recentCompetitions.slice(0, 3) ?? [],
+		upcomingCompetitions: bucket?.upcomingCompetitions.slice(0, 3) ?? [],
+	};
+}
+
+async function getLatestSuccessfulRun() {
+	const rows = await withTimeout(
+		db
+			.select({
+				exportDate: wcaExportRuns.exportDate,
+				finishedAt: wcaExportRuns.finishedAt,
+			})
+			.from(wcaExportRuns)
+			.where(eq(wcaExportRuns.status, "succeeded"))
+			.orderBy(desc(wcaExportRuns.exportDate))
+			.limit(1),
+		"latest successful ingestion run query",
+	);
+
+	return rows[0] ?? null;
+}
+
+export async function getLeaderboardEntries(input?: {
+	n?: number | string | null;
+	scope?: CoverageScope | string | null;
+}): Promise<LeaderboardEntry[]> {
+	try {
+		const limit = parseLeaderboardLimit(input?.n);
+		const scopeConfig = getCoverageScopeConfig(input?.scope);
+
+		const rows = await withTimeout(
+			db
+				.select({
+					wcaId: personCountryRegionSummary.wcaId,
+					name: wcaPeople.name,
+					countryCode: wcaPeople.countryId,
+					visitedRegionsCount:
+						personCountryRegionSummary.visitedRegionsCount,
+					totalCompetitions:
+						personCountryRegionSummary.countryCompetitionsCount,
+				})
+				.from(personCountryRegionSummary)
+				.innerJoin(
+					wcaPeople,
+					eq(wcaPeople.wcaId, personCountryRegionSummary.wcaId),
+				)
+				.where(
+					and(
+						eq(
+							personCountryRegionSummary.countryIso2,
+							scopeConfig.dbCountryIso2,
+						),
+						gt(personCountryRegionSummary.visitedRegionsCount, 0),
+					),
+				)
+				.orderBy(
+					desc(personCountryRegionSummary.visitedRegionsCount),
+					asc(personCountryRegionSummary.wcaId),
+				)
+				.limit(limit),
+			"leaderboard query",
+		);
+
+		return rows.map((entry, index) => ({
+			rank: index + 1,
+			...entry,
+		}));
+	} catch (error) {
+		console.error("Failed to fetch leaderboard entries:", error);
+		return [];
+	}
+}
+
+export async function getLeaderboardGeneratedAt() {
+	try {
+		const latestRun = await getLatestSuccessfulRun();
+		return (
+			toIsoTimestamp(latestRun?.exportDate) ??
+			toIsoTimestamp(latestRun?.finishedAt)
+		);
+	} catch (error) {
+		console.error(
+			"Failed to fetch leaderboard generated timestamp:",
+			error,
+		);
+		return null;
+	}
 }
 
 export async function getCompetitorPageData(
-  wcaId: string,
+	wcaId: string,
+	scope: CoverageScope = "us",
 ): Promise<CompetitorPageData> {
-  const [person, catalog, upcomingSnapshot] = await Promise.all([
-    getPersonByWcaId(wcaId),
-    getUsCompetitionCatalog(),
-    getUpcomingCompetitionSnapshot(),
-  ])
+	const normalizedWcaId = normalizeWcaId(wcaId);
+	const scopeConfig = getCoverageScopeConfig(scope);
+	const regions = getRegionsForScope(scope);
 
-  return buildCompetitorPageData(person, catalog, upcomingSnapshot)
-}
+	try {
+		const [personRows, competitionRows, participantRows, latestRun] =
+			await Promise.all([
+				withTimeout(
+					db
+						.select({
+							wcaId: wcaPeople.wcaId,
+							name: wcaPeople.name,
+							countryCode: wcaPeople.countryId,
+						})
+						.from(wcaPeople)
+						.where(eq(wcaPeople.wcaId, normalizedWcaId))
+						.limit(1),
+					"competitor lookup query",
+				),
+				withTimeout(
+					db
+						.select({
+							competitionId: regionalCompetitions.competitionId,
+							name: regionalCompetitions.name,
+							cityName: regionalCompetitions.cityName,
+							regionCode: regionalCompetitions.regionCode,
+							startDate: regionalCompetitions.startDate,
+							endDate: regionalCompetitions.endDate,
+						})
+						.from(regionalCompetitions)
+						.where(
+							and(
+								eq(
+									regionalCompetitions.countryIso2,
+									scopeConfig.dbCountryIso2,
+								),
+								eq(regionalCompetitions.cancelled, false),
+							),
+						),
+					"competition catalog query",
+				),
+				withTimeout(
+					db
+						.select({
+							competitionId:
+								personRegionalCompetitions.competitionId,
+						})
+						.from(personRegionalCompetitions)
+						.innerJoin(
+							regionalCompetitions,
+							eq(
+								regionalCompetitions.competitionId,
+								personRegionalCompetitions.competitionId,
+							),
+						)
+						.where(
+							and(
+								eq(
+									personRegionalCompetitions.wcaId,
+									normalizedWcaId,
+								),
+								eq(
+									regionalCompetitions.countryIso2,
+									scopeConfig.dbCountryIso2,
+								),
+								eq(regionalCompetitions.cancelled, false),
+							),
+						),
+					"competitor participation query",
+				),
+				getLatestSuccessfulRun(),
+			]);
 
-export function getLeaderboardEntries(limit = 100): LeaderboardEntry[] {
-  return leaderboardSnapshot.slice(0, limit)
-}
+		const person = personRows[0] ?? null;
+		const historicalSourceUpdatedAt =
+			toIsoTimestamp(latestRun?.exportDate) ??
+			toIsoTimestamp(latestRun?.finishedAt);
+		const { catalog, byCompetitionId, regionsByCode } = buildRegionCatalog({
+			rows: competitionRows,
+			regions,
+		});
 
-export function getLeaderboardGeneratedAt() {
-  return leaderboardGeneratedAt
+		if (!person) {
+			return {
+				scope: scopeConfig.scope,
+				scopeLabel: scopeConfig.label,
+				regionLabelPlural: scopeConfig.regionLabelPlural,
+				competitor: null,
+				visitedRegionsCount: 0,
+				totalRegions: regions.length,
+				visitedRegions: [],
+				unvisitedRegions: regions.map((region) =>
+					makeRegionCoverage(region.code, regionsByCode, catalog),
+				),
+				historicalSourceUpdatedAt,
+				upcomingSourceUpdatedAt: historicalSourceUpdatedAt,
+				upcomingStatus: latestRun ? "ok" : "degraded",
+				upcomingError: latestRun
+					? undefined
+					: "No successful weekly export ingestion has completed yet.",
+			};
+		}
+
+		const visitedRegions = new Set<string>();
+		for (const row of participantRows) {
+			const competition = byCompetitionId.get(row.competitionId);
+			if (competition) {
+				visitedRegions.add(competition.regionCode);
+			}
+		}
+
+		const visitedRegionCodes = [...visitedRegions].sort((a, b) =>
+			a.localeCompare(b),
+		);
+		const unvisitedRegionCodes = regions
+			.map((region) => region.code)
+			.filter((regionCode) => !visitedRegions.has(regionCode));
+
+		return {
+			scope: scopeConfig.scope,
+			scopeLabel: scopeConfig.label,
+			regionLabelPlural: scopeConfig.regionLabelPlural,
+			competitor: {
+				wcaId: person.wcaId,
+				name: person.name,
+				countryCode: person.countryCode,
+				totalCompetitions: participantRows.length,
+			},
+			visitedRegionsCount: visitedRegionCodes.length,
+			totalRegions: regions.length,
+			visitedRegions: visitedRegionCodes.map((regionCode) =>
+				makeRegionCoverage(regionCode, regionsByCode, catalog),
+			),
+			unvisitedRegions: unvisitedRegionCodes.map((regionCode) =>
+				makeRegionCoverage(regionCode, regionsByCode, catalog),
+			),
+			historicalSourceUpdatedAt,
+			upcomingSourceUpdatedAt: historicalSourceUpdatedAt,
+			upcomingStatus: latestRun ? "ok" : "degraded",
+			upcomingError: latestRun
+				? undefined
+				: "No successful weekly export ingestion has completed yet.",
+		};
+	} catch (error) {
+		console.error("Failed to fetch competitor page data:", error);
+		const { catalog, regionsByCode } = buildRegionCatalog({
+			rows: [],
+			regions,
+		});
+
+		return {
+			scope: scopeConfig.scope,
+			scopeLabel: scopeConfig.label,
+			regionLabelPlural: scopeConfig.regionLabelPlural,
+			competitor: null,
+			visitedRegionsCount: 0,
+			totalRegions: regions.length,
+			visitedRegions: [],
+			unvisitedRegions: regions.map((region) =>
+				makeRegionCoverage(region.code, regionsByCode, catalog),
+			),
+			historicalSourceUpdatedAt: null,
+			upcomingSourceUpdatedAt: null,
+			upcomingStatus: "degraded",
+			upcomingError:
+				"Database query timed out or failed in this runtime. Historical coverage is temporarily unavailable.",
+		};
+	}
 }

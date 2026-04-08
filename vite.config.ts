@@ -8,10 +8,13 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 
-const config = defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     devtools(),
-    cloudflare({ viteEnvironment: { name: 'ssr' } }),
+    // Use Node SSR during local dev so database queries work without workerd socket quirks.
+    ...(command === 'build'
+      ? [cloudflare({ viteEnvironment: { name: 'ssr' } })]
+      : []),
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
     tanstackStart(),
@@ -21,6 +24,4 @@ const config = defineConfig({
       },
     }),
   ],
-})
-
-export default config
+}))

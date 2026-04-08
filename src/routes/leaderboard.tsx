@@ -1,84 +1,225 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
 import {
-  getLeaderboardEntries,
-  getLeaderboardGeneratedAt,
-} from '#/lib/wca-site'
+	Button,
+	Container,
+	Group,
+	NativeSelect,
+	Paper,
+	Stack,
+	Table,
+	Text,
+	TextInput,
+	Title,
+} from "@mantine/core";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import type { FormEvent } from "react";
+import { useState } from "react";
+import {
+	COVERAGE_SCOPE_OPTIONS,
+	type CoverageScope,
+	getCoverageScopeConfig,
+	parseCoverageScope,
+} from "#/lib/coverage-scopes";
+import { parseLeaderboardLimit } from "#/lib/leaderboard-limit";
 
-export const Route = createFileRoute('/leaderboard')({
-  loader: async () => ({
-    entries: getLeaderboardEntries(100),
-    generatedAt: getLeaderboardGeneratedAt(),
-  }),
-  component: LeaderboardPage,
+type LeaderboardSearch = {
+	n?: string;
+	scope?: CoverageScope;
+};
+
+const loadLeaderboardPage = createServerFn({
+	method: "GET",
 })
+	.inputValidator((data: { n: number; scope: CoverageScope }) => data)
+	.handler(async ({ data }) => {
+		const { getLeaderboardEntries, getLeaderboardGeneratedAt } =
+			await import("#/lib/wca-site");
+		const [entries, generatedAt] = await Promise.all([
+			getLeaderboardEntries({ n: data.n, scope: data.scope }),
+			getLeaderboardGeneratedAt(),
+		]);
+		const scopeConfig = getCoverageScopeConfig(data.scope);
 
-function formatTimestamp(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC',
-  }).format(new Date(value))
+		return {
+			entries,
+			generatedAt,
+			n: data.n,
+			scope: data.scope,
+			scopeLabel: scopeConfig.label,
+			regionLabelPlural: scopeConfig.regionLabelPlural,
+		};
+	});
+
+export const Route = createFileRoute("/leaderboard")({
+	validateSearch: (search: Record<string, unknown>): LeaderboardSearch => ({
+		n:
+			typeof search.n === "string"
+				? search.n
+				: typeof search.n === "number"
+					? `${search.n}`
+					: undefined,
+		scope: parseCoverageScope(
+			typeof search.scope === "string" ? search.scope : undefined,
+		),
+	}),
+	loaderDeps: ({ search }) => ({
+		n: search.n,
+		scope: search.scope,
+	}),
+	loader: async ({ deps }) => {
+		const normalizedN = parseLeaderboardLimit(deps.n);
+		return loadLeaderboardPage({
+			data: {
+				n: normalizedN,
+				scope: deps.scope ?? "us",
+			},
+		});
+	},
+	component: LeaderboardPage,
+});
+
+function formatTimestamp(value: string | null) {
+	if (!value) {
+		return "Unavailable";
+	}
+
+	return new Intl.DateTimeFormat("en-US", {
+		dateStyle: "medium",
+		timeStyle: "short",
+		timeZone: "UTC",
+	}).format(new Date(value));
 }
 
 function LeaderboardPage() {
-  const { entries, generatedAt } = Route.useLoaderData()
+	const { entries, generatedAt, n, scope, scopeLabel, regionLabelPlural } =
+		Route.useLoaderData();
+	const navigate = useNavigate();
+	const [nInput, setNInput] = useState(`${n}`);
+	const [scopeInput, setScopeInput] = useState<CoverageScope>(scope);
 
-  return (
-    <main className="page-wrap px-4 py-12">
-      <section className="island-shell rounded-[2rem] px-6 py-8 sm:px-10 sm:py-10">
-        <p className="island-kicker mb-3">Top 100 leaderboard</p>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="display-title m-0 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-              The widest U.S. state coverage in the WCA.
-            </h1>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--sea-ink-soft)]">
-              Ordered by visited U.S. states descending, then WCA ID ascending to
-              keep ties deterministic.
-            </p>
-          </div>
-          <p className="m-0 text-sm text-[var(--sea-ink-soft)]">
-            Snapshot generated {formatTimestamp(generatedAt)} UTC
-          </p>
-        </div>
-      </section>
+	function handleSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const normalizedN = parseLeaderboardLimit(nInput);
 
-      <section className="island-shell mt-8 overflow-hidden rounded-[2rem] p-3 sm:p-4">
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-y-2 text-sm">
-            <thead>
-              <tr className="text-left text-[var(--sea-ink-soft)]">
-                <th className="px-3 py-2 font-semibold">Rank</th>
-                <th className="px-3 py-2 font-semibold">Competitor</th>
-                <th className="px-3 py-2 font-semibold">WCA ID</th>
-                <th className="px-3 py-2 font-semibold">Country</th>
-                <th className="px-3 py-2 font-semibold">Visited states</th>
-                <th className="px-3 py-2 font-semibold">Total competitions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => (
-                <tr key={entry.wcaId} className="bg-white/45 text-[var(--sea-ink)]">
-                  <td className="rounded-l-2xl px-3 py-3 font-semibold">#{entry.rank}</td>
-                  <td className="px-3 py-3">
-                    <Link
-                      to="/competitors/$wcaId"
-                      params={{ wcaId: entry.wcaId }}
-                      className="font-semibold no-underline"
-                    >
-                      {entry.name}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-3">{entry.wcaId}</td>
-                  <td className="px-3 py-3">{entry.countryCode}</td>
-                  <td className="px-3 py-3">{entry.visitedStatesCount}</td>
-                  <td className="rounded-r-2xl px-3 py-3">{entry.totalCompetitions}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
-  )
+		void navigate({
+			to: "/leaderboard",
+			search: {
+				n: `${normalizedN}`,
+				scope: scopeInput,
+			},
+		});
+	}
+
+	return (
+		<Container size="xl" px="md" py="xl">
+			<Stack gap="xl">
+				<Paper
+					className="island-shell"
+					radius="32px"
+					p={{ base: "xl", sm: "3rem" }}
+				>
+					<Stack gap="lg">
+						<Group justify="space-between" align="end">
+							<Stack gap={4}>
+								<Text
+									size="xs"
+									tt="uppercase"
+									fw={700}
+									c="var(--kicker)"
+								>
+									Top N leaderboard
+								</Text>
+								<Title order={1}>
+									Coverage leaderboard for {scopeLabel}.
+								</Title>
+								<Text maw={760} c="dimmed">
+									Ordered by visited{" "}
+									{regionLabelPlural.toLowerCase()}{" "}
+									descending, then WCA ID ascending to keep
+									ties deterministic.
+								</Text>
+							</Stack>
+							<Stack gap={2} align="flex-end">
+								<Text size="sm" c="dimmed">
+									Weekly export updated{" "}
+									{formatTimestamp(generatedAt)} UTC
+								</Text>
+								<Text size="sm" c="dimmed">
+									Showing top {n}
+								</Text>
+							</Stack>
+						</Group>
+
+						<form onSubmit={handleSubmit}>
+							<Group align="end" gap="md">
+								<NativeSelect
+									label="Coverage scope"
+									data={COVERAGE_SCOPE_OPTIONS}
+									value={scopeInput}
+									onChange={(event) =>
+										setScopeInput(
+											event.currentTarget
+												.value as CoverageScope,
+										)
+									}
+									w={{ base: "100%", sm: 220 }}
+								/>
+								<TextInput
+									label="Top N"
+									value={nInput}
+									onChange={(event) =>
+										setNInput(event.currentTarget.value)
+									}
+									inputMode="numeric"
+									pattern="[0-9]*"
+									w={140}
+								/>
+								<Button type="submit" color="teal">
+									Apply
+								</Button>
+							</Group>
+						</form>
+					</Stack>
+				</Paper>
+
+				<Paper className="island-shell" p="md">
+					<Table highlightOnHover withTableBorder stickyHeader>
+						<thead>
+							<tr>
+								<th>Rank</th>
+								<th>Competitor</th>
+								<th>WCA ID</th>
+								<th>Country</th>
+								<th>Visited regions</th>
+								<th>Competitions in scope</th>
+							</tr>
+						</thead>
+						<tbody>
+							{entries.map((entry) => (
+								<tr key={entry.wcaId}>
+									<td>#{entry.rank}</td>
+									<td>
+										<Link
+											to="/competitors/$wcaId"
+											params={{ wcaId: entry.wcaId }}
+											search={{ scope }}
+											className="no-underline"
+										>
+											<Text fw={700} c="teal.7">
+												{entry.name}
+											</Text>
+										</Link>
+									</td>
+									<td>{entry.wcaId}</td>
+									<td>{entry.countryCode}</td>
+									<td>{entry.visitedRegionsCount}</td>
+									<td>{entry.totalCompetitions}</td>
+								</tr>
+							))}
+						</tbody>
+					</Table>
+				</Paper>
+			</Stack>
+		</Container>
+	);
 }
