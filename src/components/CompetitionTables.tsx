@@ -1,10 +1,8 @@
 import {
 	Anchor,
-	Badge,
 	Button,
 	Group,
 	NativeSelect,
-	Paper,
 	ScrollArea,
 	Stack,
 	Table,
@@ -26,10 +24,11 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { CompetitionSummary, RegionCoverage } from "#/lib/wca-types";
 
 type CompetitionStatus = "visited" | "remaining";
+type CompetitionStatusFilter = "all" | CompetitionStatus;
 
 export type CompetitionStatusRow = {
 	regionCode: string;
@@ -48,21 +47,28 @@ type CompetitionTablesProps = {
 	unvisitedRegions: RegionCoverage[];
 };
 
+const statusFilterOptions = [
+	{ label: "All statuses", value: "all" },
+	{ label: "Visited", value: "visited" },
+	{ label: "Remaining", value: "remaining" },
+] satisfies { label: string; value: CompetitionStatusFilter }[];
+
+const dateRangeFormatter = new Intl.DateTimeFormat("en-US", {
+	month: "short",
+	day: "numeric",
+	year: "numeric",
+	timeZone: "UTC",
+});
+
 function formatDateRange(startDate: string, endDate: string) {
 	const start = new Date(`${startDate}T00:00:00Z`);
 	const end = new Date(`${endDate}T00:00:00Z`);
-	const formatter = new Intl.DateTimeFormat("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		timeZone: "UTC",
-	});
 
 	if (startDate === endDate) {
-		return formatter.format(start);
+		return dateRangeFormatter.format(start);
 	}
 
-	return `${formatter.format(start)} - ${formatter.format(end)}`;
+	return `${dateRangeFormatter.format(start)} - ${dateRangeFormatter.format(end)}`;
 }
 
 function buildSearchText(coverage: RegionCoverage, status: CompetitionStatus) {
@@ -110,13 +116,21 @@ export function buildCompetitionStatusRows(
 export function filterCompetitionStatusRows(
 	rows: CompetitionStatusRow[],
 	query: string,
+	statusFilter: CompetitionStatusFilter,
 ) {
 	const normalizedQuery = query.trim().toLowerCase();
+	const rowsMatchingStatus =
+		statusFilter === "all"
+			? rows
+			: rows.filter((row) => row.status === statusFilter);
+
 	if (!normalizedQuery) {
-		return rows;
+		return rowsMatchingStatus;
 	}
 
-	return rows.filter((row) => row.searchText.includes(normalizedQuery));
+	return rowsMatchingStatus.filter((row) =>
+		row.searchText.includes(normalizedQuery),
+	);
 }
 
 function CompetitionSummaryCell({
@@ -128,7 +142,7 @@ function CompetitionSummaryCell({
 }) {
 	if (!competition) {
 		return (
-			<Text size="sm" c="dimmed">
+			<Text size="sm" c="var(--text-soft)">
 				{emptyLabel}
 			</Text>
 		);
@@ -144,10 +158,10 @@ function CompetitionSummaryCell({
 			>
 				{competition.name}
 			</Anchor>
-			<Text size="sm" c="dimmed">
+			<Text size="sm" c="var(--text-soft)">
 				{competition.city}
 			</Text>
-			<Text size="sm" c="dimmed">
+			<Text size="sm" c="var(--text-soft)">
 				{formatDateRange(competition.startDate, competition.endDate)}
 			</Text>
 		</Stack>
@@ -185,7 +199,7 @@ function SortableHeader<TData>({
 	);
 }
 
-const columns: ColumnDef<CompetitionStatusRow>[] = [
+export const competitionTableColumns: ColumnDef<CompetitionStatusRow>[] = [
 	{
 		accessorKey: "regionName",
 		id: "region",
@@ -195,7 +209,7 @@ const columns: ColumnDef<CompetitionStatusRow>[] = [
 		cell: ({ row }) => (
 			<Stack gap={2}>
 				<Text fw={700}>{row.original.regionName}</Text>
-				<Text size="sm" c="dimmed">
+				<Text size="sm" c="var(--text-soft)">
 					{row.original.regionCode}
 				</Text>
 			</Stack>
@@ -215,20 +229,19 @@ const columns: ColumnDef<CompetitionStatusRow>[] = [
 			return order[rowA.original.status] - order[rowB.original.status];
 		},
 		cell: ({ row }) => (
-			<Badge
-				variant={row.original.status === "visited" ? "filled" : "light"}
-				color={row.original.status === "visited" ? "teal" : "gray"}
-			>
+			<span className="status-pill" data-status={row.original.status}>
 				{row.original.status === "visited" ? "Visited" : "Remaining"}
-			</Badge>
+			</span>
 		),
 	},
 	{
-		accessorFn: (row) => row.recentCompetition?.startDate ?? "",
+		accessorFn: (row) => row.recentCompetition?.endDate,
 		id: "latestCompleted",
 		header: ({ column }) => (
 			<SortableHeader column={column} label="Latest completed" />
 		),
+		sortingFn: "datetime",
+		sortUndefined: "last",
 		cell: ({ row }) => (
 			<CompetitionSummaryCell
 				competition={row.original.recentCompetition}
@@ -237,11 +250,13 @@ const columns: ColumnDef<CompetitionStatusRow>[] = [
 		),
 	},
 	{
-		accessorFn: (row) => row.upcomingCompetition?.startDate ?? "9999-12-31",
+		accessorFn: (row) => row.upcomingCompetition?.startDate,
 		id: "nextOpportunity",
 		header: ({ column }) => (
 			<SortableHeader column={column} label="Next opportunity" />
 		),
+		sortingFn: "datetime",
+		sortUndefined: "last",
 		cell: ({ row }) => (
 			<CompetitionSummaryCell
 				competition={row.original.upcomingCompetition}
@@ -261,7 +276,7 @@ const columns: ColumnDef<CompetitionStatusRow>[] = [
 				<Text fw={600}>
 					{row.original.recentCompetitionsCount} recent
 				</Text>
-				<Text size="sm" c="dimmed">
+				<Text size="sm" c="var(--text-soft)">
 					{row.original.upcomingCompetitionsCount} upcoming
 				</Text>
 			</Stack>
@@ -271,12 +286,14 @@ const columns: ColumnDef<CompetitionStatusRow>[] = [
 
 const noopFilter: FilterFn<CompetitionStatusRow> = () => true;
 
-export function CompetitionTables({
+function CompetitionTablesInner({
 	scopeLabel,
 	visitedRegions,
 	unvisitedRegions,
 }: CompetitionTablesProps) {
 	const [search, setSearch] = useState("");
+	const [statusFilter, setStatusFilter] =
+		useState<CompetitionStatusFilter>("all");
 	const [sorting, setSorting] = useState<SortingState>([
 		{ id: "status", desc: false },
 		{ id: "region", desc: false },
@@ -285,12 +302,17 @@ export function CompetitionTables({
 		pageIndex: 0,
 		pageSize: 10,
 	});
+	const deferredSearch = useDeferredValue(search);
 
-	const allRows = buildCompetitionStatusRows(
-		visitedRegions,
-		unvisitedRegions,
+	const allRows = useMemo(
+		() => buildCompetitionStatusRows(visitedRegions, unvisitedRegions),
+		[visitedRegions, unvisitedRegions],
 	);
-	const filteredRows = filterCompetitionStatusRows(allRows, search);
+	const filteredRows = useMemo(
+		() =>
+			filterCompetitionStatusRows(allRows, deferredSearch, statusFilter),
+		[allRows, deferredSearch, statusFilter],
+	);
 
 	useEffect(() => {
 		const pageCount = Math.max(
@@ -310,8 +332,9 @@ export function CompetitionTables({
 
 	const table = useReactTable({
 		data: filteredRows,
-		columns,
+		columns: competitionTableColumns,
 		filterFns: { fuzzy: noopFilter },
+		getRowId: (row) => row.regionCode,
 		state: {
 			sorting,
 			pagination,
@@ -327,157 +350,164 @@ export function CompetitionTables({
 	const hasRows = filteredRows.length > 0;
 
 	return (
-		<section className="state-section">
-			<Paper className="island-shell" p="xl">
-				<Stack gap="lg">
-					<Group justify="space-between" align="end" gap="md">
-						<Stack gap={4} maw={760}>
-							<Text
-								size="xs"
-								tt="uppercase"
-								fw={700}
-								c="var(--kicker)"
-							>
-								Competition status
-							</Text>
-							<Title order={2}>Region-by-region progress</Title>
-							<Text size="sm" c="dimmed">
-								Each row shows whether this competitor has
-								already competed in that region within{" "}
-								{scopeLabel}, plus the latest completed event
-								and the next listed opportunity.
-							</Text>
-						</Stack>
-						<Text size="sm" c="dimmed">
-							{visitedRegions.length} visited /{" "}
-							{unvisitedRegions.length} remaining
+		<section className="page-section">
+			<Stack gap="lg">
+				<div className="section-header">
+					<Stack gap={4} maw={760}>
+						<Text className="eyebrow">Competition status</Text>
+						<Title order={2}>Region-by-region progress</Title>
+						<Text size="sm" c="var(--text-soft)">
+							Each row shows whether this competitor has already
+							competed in that region within {scopeLabel}, plus
+							the latest completed event and the next listed
+							opportunity.
 						</Text>
-					</Group>
+					</Stack>
+					<Text size="sm" c="var(--text-soft)">
+						{visitedRegions.length} visited /{" "}
+						{unvisitedRegions.length} remaining
+					</Text>
+				</div>
 
-					<Group align="end" gap="md">
-						<TextInput
-							label="Search regions or competitions"
-							placeholder="Ontario, London, Open..."
-							value={search}
-							onChange={(event) => {
-								setSearch(event.currentTarget.value);
-								setPagination((current) => ({
-									...current,
-									pageIndex: 0,
-								}));
-							}}
-							leftSection={<Search size={16} />}
-							flex={1}
-						/>
-						<NativeSelect
-							label="Rows per page"
-							data={["10", "25", "50"]}
-							value={String(pagination.pageSize)}
-							onChange={(event) =>
-								setPagination({
-									pageIndex: 0,
-									pageSize: Number(event.currentTarget.value),
-								})
-							}
-							w={{ base: "100%", sm: 160 }}
-						/>
-					</Group>
+				<Group align="end" gap="md">
+					<TextInput
+						label="Search regions or competitions"
+						placeholder="Ontario, London, Open..."
+						value={search}
+						onChange={(event) => {
+							setSearch(event.currentTarget.value);
+							setPagination((current) => ({
+								...current,
+								pageIndex: 0,
+							}));
+						}}
+						leftSection={<Search size={16} />}
+						flex={1}
+					/>
+					<NativeSelect
+						label="Status"
+						data={statusFilterOptions}
+						value={statusFilter}
+						onChange={(event) => {
+							setStatusFilter(
+								event.currentTarget
+									.value as CompetitionStatusFilter,
+							);
+							setPagination((current) => ({
+								...current,
+								pageIndex: 0,
+							}));
+						}}
+						w={{ base: "100%", sm: 180 }}
+					/>
+					<NativeSelect
+						label="Rows per page"
+						data={["10", "25", "50"]}
+						value={String(pagination.pageSize)}
+						onChange={(event) =>
+							setPagination({
+								pageIndex: 0,
+								pageSize: Number(event.currentTarget.value),
+							})
+						}
+						w={{ base: "100%", sm: 160 }}
+					/>
+				</Group>
 
-					<ScrollArea offsetScrollbars>
-						<Table
-							highlightOnHover
-							horizontalSpacing="md"
-							verticalSpacing="md"
-							striped
-							miw={980}
-						>
-							<Table.Thead>
-								{table.getHeaderGroups().map((headerGroup) => (
-									<Table.Tr key={headerGroup.id}>
-										{headerGroup.headers.map((header) => (
-											<Table.Th key={header.id}>
-												{header.isPlaceholder
-													? null
-													: flexRender(
-															header.column
-																.columnDef
-																.header,
-															header.getContext(),
-														)}
-											</Table.Th>
+				<ScrollArea offsetScrollbars>
+					<Table
+						highlightOnHover
+						horizontalSpacing="md"
+						verticalSpacing="md"
+						striped
+						withTableBorder
+						miw={980}
+					>
+						<Table.Thead>
+							{table.getHeaderGroups().map((headerGroup) => (
+								<Table.Tr key={headerGroup.id}>
+									{headerGroup.headers.map((header) => (
+										<Table.Th key={header.id}>
+											{header.isPlaceholder
+												? null
+												: flexRender(
+														header.column.columnDef
+															.header,
+														header.getContext(),
+													)}
+										</Table.Th>
+									))}
+								</Table.Tr>
+							))}
+						</Table.Thead>
+						<Table.Tbody>
+							{hasRows ? (
+								table.getRowModel().rows.map((row) => (
+									<Table.Tr key={row.id}>
+										{row.getVisibleCells().map((cell) => (
+											<Table.Td
+												key={cell.id}
+												style={{
+													verticalAlign: "top",
+												}}
+											>
+												{flexRender(
+													cell.column.columnDef.cell,
+													cell.getContext(),
+												)}
+											</Table.Td>
 										))}
 									</Table.Tr>
-								))}
-							</Table.Thead>
-							<Table.Tbody>
-								{hasRows ? (
-									table.getRowModel().rows.map((row) => (
-										<Table.Tr key={row.id}>
-											{row
-												.getVisibleCells()
-												.map((cell) => (
-													<Table.Td
-														key={cell.id}
-														style={{
-															verticalAlign:
-																"top",
-														}}
-													>
-														{flexRender(
-															cell.column
-																.columnDef.cell,
-															cell.getContext(),
-														)}
-													</Table.Td>
-												))}
-										</Table.Tr>
-									))
-								) : (
-									<Table.Tr>
-										<Table.Td
-											colSpan={columns.length}
-											style={{ textAlign: "center" }}
-										>
-											<Text size="sm" c="dimmed">
-												No regions match "{search}".
-											</Text>
-										</Table.Td>
-									</Table.Tr>
-								)}
-							</Table.Tbody>
-						</Table>
-					</ScrollArea>
+								))
+							) : (
+								<Table.Tr>
+									<Table.Td
+										colSpan={competitionTableColumns.length}
+										style={{ textAlign: "center" }}
+									>
+										<Text size="sm" c="var(--text-soft)">
+											No regions match the current
+											filters.
+										</Text>
+									</Table.Td>
+								</Table.Tr>
+							)}
+						</Table.Tbody>
+					</Table>
+				</ScrollArea>
 
-					<Group justify="space-between" align="center" gap="md">
-						<Text size="sm" c="dimmed">
-							{filteredRows.length} regions shown
+				<Group justify="space-between" align="center" gap="md">
+					<Text size="sm" c="var(--text-soft)">
+						{filteredRows.length} regions shown
+					</Text>
+					<Group gap="sm">
+						<Button
+							variant="default"
+							size="xs"
+							onClick={() => table.previousPage()}
+							disabled={!table.getCanPreviousPage()}
+						>
+							Previous
+						</Button>
+						<Text size="sm" c="var(--text-soft)">
+							{hasRows
+								? `Page ${pagination.pageIndex + 1} of ${pageCount}`
+								: "No matching regions"}
 						</Text>
-						<Group gap="sm">
-							<Button
-								variant="default"
-								size="xs"
-								onClick={() => table.previousPage()}
-								disabled={!table.getCanPreviousPage()}
-							>
-								Previous
-							</Button>
-							<Text size="sm" c="dimmed">
-								{hasRows
-									? `Page ${pagination.pageIndex + 1} of ${pageCount}`
-									: "No matching regions"}
-							</Text>
-							<Button
-								variant="default"
-								size="xs"
-								onClick={() => table.nextPage()}
-								disabled={!table.getCanNextPage()}
-							>
-								Next
-							</Button>
-						</Group>
+						<Button
+							variant="default"
+							size="xs"
+							onClick={() => table.nextPage()}
+							disabled={!table.getCanNextPage()}
+						>
+							Next
+						</Button>
 					</Group>
-				</Stack>
-			</Paper>
+				</Group>
+			</Stack>
 		</section>
 	);
 }
+
+export const CompetitionTables = memo(CompetitionTablesInner);
+CompetitionTables.displayName = "CompetitionTables";

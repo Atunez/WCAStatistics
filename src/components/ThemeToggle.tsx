@@ -10,7 +10,11 @@ export default function ThemeToggle() {
 				size="xs"
 				value={mode}
 				onChange={(value) => {
-					if (value === "light" || value === "dark" || value === "auto") {
+					if (
+						value === "light" ||
+						value === "dark" ||
+						value === "auto"
+					) {
 						setMode(value);
 					}
 				}}

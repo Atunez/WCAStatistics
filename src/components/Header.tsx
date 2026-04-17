@@ -1,16 +1,5 @@
-import {
-	Badge,
-	Box,
-	Button,
-	Container,
-	Group,
-	Paper,
-	Stack,
-	Text,
-	Title,
-} from "@mantine/core";
+import { Box, Container, Group, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
-import { COVERAGE_SCOPE_OPTIONS } from "#/lib/coverage-scopes";
 import ThemeToggle from "./ThemeToggle";
 
 const navItems = [
@@ -21,88 +10,44 @@ const navItems = [
 
 export default function Header() {
 	return (
-		<Box
-			component="header"
-			className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--header-bg)]"
-		>
+		<Box component="header" className="site-header">
 			<Container size="xl" px="md" py="md">
-				<Group justify="space-between" align="center" gap="md">
-					<Link to="/" className="no-underline">
-						<Paper className="island-shell px-4 py-3">
-							<Group gap="md" wrap="nowrap">
-								<Badge
-									size="xl"
-									radius="xl"
-									variant="filled"
-									styles={{
-										root: {
-											background:
-												"linear-gradient(135deg,var(--lagoon),#7ed3bf)",
-											color: "#fff",
-											paddingInline: 14,
-											height: 36,
-										},
-									}}
-								>
-									{COVERAGE_SCOPE_OPTIONS.length} scopes
-								</Badge>
-								<Stack gap={2}>
-									<Text
-										size="xs"
-										tt="uppercase"
-										c="dimmed"
-										fw={700}
-									>
-										WCA
-									</Text>
-									<Title order={4} c="var(--sea-ink)">
-										Region Coverage
-									</Title>
-								</Stack>
-							</Group>
-						</Paper>
-					</Link>
+				<div className="header-layout">
+					<Stack gap={2}>
+						<Link to="/" className="brand-link">
+							<Text className="eyebrow">WCA statistics</Text>
+							<Title order={3}>Region Coverage</Title>
+						</Link>
+						<Text size="sm" c="var(--text-soft)">
+							Track region coverage across the United States,
+							Canada, and England.
+						</Text>
+					</Stack>
 
-					<Group gap="xs" visibleFrom="sm">
+					<nav className="header-nav" aria-label="Primary">
 						{navItems.map((item) => (
 							<Link
 								key={item.to}
 								to={item.to}
-								className="no-underline"
+								className="nav-link"
 							>
-								<Button variant="subtle" color="gray">
-									{item.label}
-								</Button>
+								{item.label}
 							</Link>
 						))}
-						<Button
-							component="a"
+						<a
 							href="https://www.worldcubeassociation.org/"
 							target="_blank"
 							rel="noreferrer"
-							variant="subtle"
-							color="gray"
+							className="nav-link"
 						>
 							WCA
-						</Button>
+						</a>
+					</nav>
+
+					<Group justify="flex-end">
+						<ThemeToggle />
 					</Group>
-
-					<ThemeToggle />
-				</Group>
-
-				<Group gap="xs" hiddenFrom="sm" mt="md">
-					{navItems.map((item) => (
-						<Link
-							key={item.to}
-							to={item.to}
-							className="no-underline"
-						>
-							<Button size="xs" variant="light" color="teal">
-								{item.label}
-							</Button>
-						</Link>
-					))}
-				</Group>
+				</div>
 			</Container>
 		</Box>
 	);

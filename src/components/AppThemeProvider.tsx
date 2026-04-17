@@ -1,16 +1,15 @@
 import {
 	Button,
-	MantineProvider,
-	Paper,
-	SegmentedControl,
 	createTheme,
+	MantineProvider,
+	SegmentedControl,
 } from "@mantine/core";
 import {
 	createContext,
+	type ReactNode,
 	useContext,
 	useEffect,
 	useState,
-	type ReactNode,
 } from "react";
 
 type ThemeMode = "light" | "dark" | "auto";
@@ -27,26 +26,20 @@ const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 const theme = createTheme({
 	fontFamily: "var(--font-sans)",
 	headings: {
-		fontFamily: '"Fraunces", Georgia, serif',
+		fontFamily: "var(--font-sans)",
 		fontWeight: "700",
 	},
 	primaryColor: "teal",
-	defaultRadius: "xl",
+	defaultRadius: "md",
 	components: {
-		Paper: Paper.extend({
-			defaultProps: {
-				radius: "xl",
-				withBorder: true,
-			},
-		}),
 		Button: Button.extend({
 			defaultProps: {
-				radius: "xl",
+				radius: "md",
 			},
 		}),
 		SegmentedControl: SegmentedControl.extend({
 			defaultProps: {
-				radius: "xl",
+				radius: "md",
 			},
 		}),
 	},
@@ -113,7 +106,8 @@ export default function AppThemeProvider({
 	children: ReactNode;
 }) {
 	const [mode, setMode] = useState<ThemeMode>("auto");
-	const [resolvedMode, setResolvedMode] = useState<ResolvedThemeMode>("light");
+	const [resolvedMode, setResolvedMode] =
+		useState<ResolvedThemeMode>("light");
 
 	useEffect(() => {
 		const initialMode = getInitialMode();

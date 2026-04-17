@@ -3,7 +3,6 @@ import {
 	Container,
 	Group,
 	NativeSelect,
-	Paper,
 	Stack,
 	Table,
 	Text,
@@ -113,42 +112,28 @@ function LeaderboardPage() {
 	return (
 		<Container size="xl" px="md" py="xl">
 			<Stack gap="xl">
-				<Paper
-					className="island-shell"
-					radius="32px"
-					p={{ base: "xl", sm: "3rem" }}
-				>
+				<section className="page-section page-section--muted">
 					<Stack gap="lg">
-						<Group justify="space-between" align="end">
-							<Stack gap={4}>
-								<Text
-									size="xs"
-									tt="uppercase"
-									fw={700}
-									c="var(--kicker)"
-								>
-									Top N leaderboard
-								</Text>
-								<Title order={1}>
-									Coverage leaderboard for {scopeLabel}.
-								</Title>
-								<Text maw={760} c="dimmed">
-									Ordered by visited{" "}
-									{regionLabelPlural.toLowerCase()}{" "}
-									descending, then WCA ID ascending to keep
-									ties deterministic.
-								</Text>
-							</Stack>
-							<Stack gap={2} align="flex-end">
-								<Text size="sm" c="dimmed">
-									Weekly export updated{" "}
-									{formatTimestamp(generatedAt)} UTC
-								</Text>
-								<Text size="sm" c="dimmed">
-									Showing top {n}
-								</Text>
-							</Stack>
-						</Group>
+						<Stack gap="xs">
+							<Text className="eyebrow">Top N leaderboard</Text>
+							<Title order={1}>
+								Coverage leaderboard for {scopeLabel}
+							</Title>
+							<Text size="lg" c="var(--text-soft)" maw={820}>
+								Entries are ordered by visited{" "}
+								{regionLabelPlural.toLowerCase()} descending,
+								then by WCA ID ascending so ties stay
+								deterministic.
+							</Text>
+						</Stack>
+
+						<div className="inline-meta">
+							<Text component="span">
+								Weekly export updated{" "}
+								{formatTimestamp(generatedAt)} UTC
+							</Text>
+							<Text component="span">Showing top {n}</Text>
+						</div>
 
 						<form onSubmit={handleSubmit}>
 							<Group align="end" gap="md">
@@ -177,12 +162,17 @@ function LeaderboardPage() {
 								<Button type="submit" color="teal">
 									Apply
 								</Button>
+								<Link to="/" className="no-underline">
+									<Button variant="default">
+										Back to search
+									</Button>
+								</Link>
 							</Group>
 						</form>
 					</Stack>
-				</Paper>
+				</section>
 
-				<Paper className="island-shell" p="md">
+				<section className="page-section">
 					<Table highlightOnHover withTableBorder stickyHeader>
 						<thead>
 							<tr>
@@ -205,7 +195,7 @@ function LeaderboardPage() {
 											search={{ scope }}
 											className="no-underline"
 										>
-											<Text fw={700} c="teal.7">
+											<Text fw={700} c="var(--accent)">
 												{entry.name}
 											</Text>
 										</Link>
@@ -218,7 +208,7 @@ function LeaderboardPage() {
 							))}
 						</tbody>
 					</Table>
-				</Paper>
+				</section>
 			</Stack>
 		</Container>
 	);

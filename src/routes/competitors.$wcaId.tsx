@@ -1,12 +1,11 @@
 import {
-	Badge,
 	Button,
 	Container,
 	Group,
 	NativeSelect,
-	Paper,
 	SimpleGrid,
 	Stack,
+	Table,
 	Text,
 	TextInput,
 	Title,
@@ -71,25 +70,18 @@ function formatTimestamp(value: string | null) {
 	}).format(new Date(value));
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
-	return (
-		<Paper className="island-shell" p="lg">
-			<Stack gap={4}>
-				<Text size="xs" tt="uppercase" fw={700} c="var(--kicker)">
-					{label}
-				</Text>
-				<Title order={2}>{value}</Title>
-			</Stack>
-		</Paper>
-	);
-}
+type CompetitorLookupFormProps = {
+	initialWcaId: string;
+	initialScope: CoverageScope;
+};
 
-function CompetitorPage() {
+function CompetitorLookupForm({
+	initialWcaId,
+	initialScope,
+}: CompetitorLookupFormProps) {
 	const navigate = useNavigate();
-	const params = Route.useParams();
-	const data = Route.useLoaderData();
-	const [wcaId, setWcaId] = useState(params.wcaId);
-	const [scope, setScope] = useState<CoverageScope>(data.scope);
+	const [wcaId, setWcaId] = useState(initialWcaId);
+	const [scope, setScope] = useState<CoverageScope>(initialScope);
 	const [error, setError] = useState<string | null>(null);
 
 	function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -110,133 +102,147 @@ function CompetitorPage() {
 	}
 
 	return (
+		<form onSubmit={handleSubmit}>
+			<Group align="end" gap="md">
+				<TextInput
+					label="Search another WCA ID"
+					value={wcaId}
+					onChange={(event) => setWcaId(event.currentTarget.value)}
+					error={error}
+					placeholder="Search another WCA ID"
+					w={{ base: "100%", sm: 320 }}
+				/>
+				<NativeSelect
+					label="Coverage scope"
+					data={COVERAGE_SCOPE_OPTIONS}
+					value={scope}
+					onChange={(event) =>
+						setScope(event.currentTarget.value as CoverageScope)
+					}
+					w={{ base: "100%", sm: 220 }}
+				/>
+				<Button type="submit" color="teal">
+					Search
+				</Button>
+			</Group>
+		</form>
+	);
+}
+
+function CompetitorPage() {
+	const params = Route.useParams();
+	const data = Route.useLoaderData();
+
+	const summaryRows = data.competitor
+		? [
+				["Visited regions", `${data.visitedRegionsCount}`],
+				["Remaining regions", `${data.unvisitedRegions.length}`],
+				[
+					"Competitions in scope",
+					`${data.competitor.totalCompetitions}`,
+				],
+				["Country", data.competitor.countryCode],
+			]
+		: [];
+
+	const sourceRows = [
+		[
+			"Historical coverage source",
+			`Updated ${formatTimestamp(data.historicalSourceUpdatedAt)} UTC`,
+		],
+		[
+			"Upcoming competition source",
+			data.upcomingStatus === "ok"
+				? `Updated ${formatTimestamp(data.upcomingSourceUpdatedAt)} UTC`
+				: "Temporarily unavailable. Historical coverage still reflects official participation.",
+		],
+	];
+
+	return (
 		<Container size="xl" px="md" py="xl">
 			<Stack gap="xl">
-				<Paper
-					className="island-shell"
-					radius="32px"
-					p={{ base: "xl", sm: "3rem" }}
-				>
-					<Group justify="space-between" align="end" gap="xl">
-						<Stack gap="md" maw={760}>
-							<Badge
-								variant="light"
-								color="teal"
-								size="lg"
-								w="fit-content"
-							>
-								Competitor lookup
-							</Badge>
+				<section className="page-section page-section--muted">
+					<Stack gap="lg">
+						<Stack gap="xs" maw={840}>
+							<Text className="eyebrow">Competitor lookup</Text>
 							<Title order={1}>
 								{data.competitor
 									? data.competitor.name
 									: "Competitor not found"}
 							</Title>
-							<Text size="lg" c="dimmed">
+							<Text size="lg" c="var(--text-soft)">
 								{data.competitor
 									? `${data.competitor.wcaId} has visited ${data.visitedRegionsCount} of ${data.totalRegions} ${data.regionLabelPlural} in the current dataset.`
-									: `We could not find ${params.wcaId.toUpperCase()} in the current WCA source. Try another ID from the homepage search.`}
+									: `We could not find ${params.wcaId.toUpperCase()} in the current WCA source. Try another ID from the search page.`}
 							</Text>
 						</Stack>
 
-						<form onSubmit={handleSubmit}>
-							<Group align="end" gap="md">
-								<TextInput
-									label="Search another WCA ID"
-									value={wcaId}
-									onChange={(event) =>
-										setWcaId(event.currentTarget.value)
-									}
-									error={error}
-									placeholder="Search another WCA ID"
-									w={{ base: "100%", sm: 320 }}
-								/>
-								<NativeSelect
-									label="Coverage scope"
-									data={COVERAGE_SCOPE_OPTIONS}
-									value={scope}
-									onChange={(event) =>
-										setScope(
-											event.currentTarget
-												.value as CoverageScope,
-										)
-									}
-									w={{ base: "100%", sm: 220 }}
-								/>
-								<Button type="submit" color="teal">
-									Search
-								</Button>
-							</Group>
-						</form>
-					</Group>
-				</Paper>
+						<CompetitorLookupForm
+							key={`${params.wcaId}:${data.scope}`}
+							initialWcaId={params.wcaId}
+							initialScope={data.scope}
+						/>
+					</Stack>
+				</section>
 
 				{data.competitor ? (
 					<>
-						<SimpleGrid
-							cols={{ base: 1, sm: 2, xl: 4 }}
-							spacing="md"
-						>
-							<StatCard
-								label="Visited regions"
-								value={data.visitedRegionsCount}
-							/>
-							<StatCard
-								label="Remaining regions"
-								value={data.unvisitedRegions.length}
-							/>
-							<StatCard
-								label="Competitions in scope"
-								value={data.competitor.totalCompetitions}
-							/>
-							<StatCard
-								label="Country"
-								value={data.competitor.countryCode}
-							/>
-						</SimpleGrid>
+						<SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
+							<section className="page-section">
+								<Stack gap="lg">
+									<Stack gap={4}>
+										<Text className="eyebrow">Summary</Text>
+										<Title order={2}>
+											Coverage snapshot
+										</Title>
+									</Stack>
 
-						<SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
-							<Paper className="island-shell" p="lg">
-								<Stack gap={4}>
-									<Text
-										size="xs"
-										tt="uppercase"
-										fw={700}
-										c="var(--kicker)"
-									>
-										Historical coverage source
-									</Text>
-									<Text size="sm" c="dimmed">
-										Updated{" "}
-										{formatTimestamp(
-											data.historicalSourceUpdatedAt,
-										)}{" "}
-										UTC
-									</Text>
+									<Table withTableBorder>
+										<tbody>
+											{summaryRows.map(
+												([label, value]) => (
+													<tr key={label}>
+														<th>{label}</th>
+														<td>{value}</td>
+													</tr>
+												),
+											)}
+										</tbody>
+									</Table>
 								</Stack>
-							</Paper>
-							<Paper className="island-shell" p="lg">
-								<Stack gap={4}>
-									<Text
-										size="xs"
-										tt="uppercase"
-										fw={700}
-										c="var(--kicker)"
-									>
-										Upcoming competition source
-									</Text>
-									<Text size="sm" c="dimmed">
-										{data.upcomingStatus === "ok"
-											? `Updated ${formatTimestamp(data.upcomingSourceUpdatedAt)} UTC`
-											: "Temporarily unavailable - historical region coverage still reflects official participation."}
-									</Text>
+							</section>
+
+							<section className="page-section">
+								<Stack gap="lg">
+									<Stack gap={4}>
+										<Text className="eyebrow">
+											Data sources
+										</Text>
+										<Title order={2}>
+											Current dataset status
+										</Title>
+									</Stack>
+
+									<Table withTableBorder>
+										<tbody>
+											{sourceRows.map(
+												([label, value]) => (
+													<tr key={label}>
+														<th>{label}</th>
+														<td>{value}</td>
+													</tr>
+												),
+											)}
+										</tbody>
+									</Table>
+
 									{data.upcomingError ? (
-										<Text size="sm" c="dimmed">
-											{data.upcomingError}
+										<Text size="sm" c="var(--text-soft)">
+											Source detail: {data.upcomingError}
 										</Text>
 									) : null}
 								</Stack>
-							</Paper>
+							</section>
 						</SimpleGrid>
 
 						<CompetitionTables
@@ -246,15 +252,15 @@ function CompetitorPage() {
 						/>
 					</>
 				) : (
-					<Paper className="island-shell" p="xl">
+					<section className="page-section">
 						<Stack gap="md">
-							<Text size="md" c="dimmed">
+							<Text size="md" c="var(--text-soft)">
 								Double-check the WCA ID and try again, or browse
 								the current public leaderboard while you search.
 							</Text>
 							<Group gap="md">
 								<Link to="/" className="no-underline">
-									<Button variant="light" color="teal">
+									<Button variant="default">
 										Back to search
 									</Button>
 								</Link>
@@ -263,13 +269,13 @@ function CompetitorPage() {
 									search={{ scope: data.scope }}
 									className="no-underline"
 								>
-									<Button variant="light" color="gray">
+									<Button variant="default">
 										View leaderboard
 									</Button>
 								</Link>
 							</Group>
 						</Stack>
-					</Paper>
+					</section>
 				)}
 			</Stack>
 		</Container>

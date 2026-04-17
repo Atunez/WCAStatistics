@@ -1,10 +1,8 @@
 import {
-	Badge,
 	Button,
 	Container,
 	Group,
 	NativeSelect,
-	Paper,
 	SimpleGrid,
 	Stack,
 	Table,
@@ -33,6 +31,32 @@ const loadLeaderboardPreview = createServerFn({
 const usScope = getCoverageScopeConfig("us");
 const canadaScope = getCoverageScopeConfig("ca");
 const englandScope = getCoverageScopeConfig("eng");
+
+const scopeRows = [
+	{
+		scope: usScope.label,
+		regions: usScope.regions.length,
+		description: "50 states plus 5 inhabited U.S. territories.",
+	},
+	{
+		scope: canadaScope.label,
+		regions: canadaScope.regions.length,
+		description: "All Canadian provinces and territories.",
+	},
+	{
+		scope: englandScope.label,
+		regions: englandScope.regions.length,
+		description: "England tracked by 48 ceremonial counties.",
+	},
+];
+
+const competitorPageNotes = [
+	"Visited-region totals based on official WCA participation in the selected scope.",
+	"Every region appears in exactly one bucket: visited or remaining.",
+	"The latest completed event and next listed opportunity for each region.",
+	"A deterministic leaderboard ordered by visited-region count and WCA ID.",
+	"A fallback state if the upcoming-events catalog is unavailable.",
+];
 
 export const Route = createFileRoute("/")({
 	loader: async () => loadLeaderboardPreview(),
@@ -74,37 +98,27 @@ function HomePage() {
 	return (
 		<Container size="xl" px="md" py="xl">
 			<Stack gap="xl">
-				<Paper
-					className="island-shell rise-in relative overflow-hidden"
-					radius="32px"
-					p={{ base: "xl", sm: "3rem" }}
-				>
+				<section className="page-section page-section--muted rise-in">
 					<Stack gap="lg">
-						<Badge
-							variant="light"
-							color="teal"
-							size="lg"
-							w="fit-content"
-						>
-							Track regional coverage across the WCA
-						</Badge>
-						<Title order={1} fz={{ base: 40, sm: 64 }} maw={860}>
-							See which regions your WCA career has already
-							reached.
-						</Title>
-						<Text size="lg" c="dimmed" maw={760}>
-							Search by WCA ID to compare visited and unvisited
-							regions across the United States, Canada, and
-							England. Review the last three competitions in each
-							region and spot upcoming opportunities where
-							coverage is still missing.
-						</Text>
+						<Stack gap="xs" maw={840}>
+							<Text className="eyebrow">Competitor search</Text>
+							<Title order={1}>
+								Check WCA region coverage by competitor
+							</Title>
+							<Text size="lg" c="var(--text-soft)">
+								Search by WCA ID to compare visited and
+								unvisited regions across the United States,
+								Canada, and England. The competitor page keeps
+								the output focused on coverage, recent history,
+								and next opportunities.
+							</Text>
+						</Stack>
 
 						<form onSubmit={handleSubmit}>
 							<Group align="end" gap="md">
 								<TextInput
 									flex={1}
-									size="lg"
+									size="md"
 									label="WCA ID"
 									placeholder="Enter a WCA ID, like 2013FELI01"
 									value={wcaId}
@@ -114,7 +128,7 @@ function HomePage() {
 									error={error}
 								/>
 								<NativeSelect
-									size="lg"
+									size="md"
 									label="Coverage scope"
 									data={COVERAGE_SCOPE_OPTIONS}
 									value={scope}
@@ -126,67 +140,72 @@ function HomePage() {
 									}
 									w={{ base: "100%", sm: 220 }}
 								/>
-								<Button
-									type="submit"
-									size="lg"
-									variant="filled"
-									color="teal"
-								>
+								<Button type="submit" size="md" color="teal">
 									Open competitor page
 								</Button>
 							</Group>
 							{!error ? (
-								<Text mt="sm" size="sm" c="dimmed">
-									Valid IDs look like four digits, four
-									letters, and two digits.
+								<Text mt="sm" size="sm" c="var(--text-soft)">
+									Valid IDs use four digits, four letters, and
+									two digits.
 								</Text>
 							) : null}
 						</form>
 					</Stack>
-				</Paper>
-
-				<SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
-					{[
-						[
-							`${usScope.regions.length} U.S. regions`,
-							"Includes the 50 states plus 5 inhabited U.S. territories.",
-						],
-						[
-							`${canadaScope.regions.length} Canadian regions`,
-							"Covers all provinces and territories across Canada.",
-						],
-						[
-							`${englandScope.regions.length} English regions`,
-							"Tracks England using the 48 ceremonial counties.",
-						],
-					].map(([title, description]) => (
-						<Paper
-							key={title}
-							className="island-shell feature-card"
-							p="lg"
-						>
-							<Stack gap="xs">
-								<Title order={3} fz="h4">
-									{title}
-								</Title>
-								<Text size="sm" c="dimmed">
-									{description}
-								</Text>
-							</Stack>
-						</Paper>
-					))}
-				</SimpleGrid>
+				</section>
 
 				<SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
-					<Paper className="island-shell" p="xl">
-						<Group justify="space-between" align="start" mb="lg">
+					<section className="page-section">
+						<Stack gap="lg">
 							<Stack gap={4}>
-								<Text
-									size="xs"
-									tt="uppercase"
-									fw={700}
-									c="var(--kicker)"
-								>
+								<Text className="eyebrow">Coverage scopes</Text>
+								<Title order={2}>Supported region sets</Title>
+							</Stack>
+
+							<Table withTableBorder>
+								<thead>
+									<tr>
+										<th>Scope</th>
+										<th>Regions</th>
+										<th>Notes</th>
+									</tr>
+								</thead>
+								<tbody>
+									{scopeRows.map((row) => (
+										<tr key={row.scope}>
+											<td>{row.scope}</td>
+											<td>{row.regions}</td>
+											<td>{row.description}</td>
+										</tr>
+									))}
+								</tbody>
+							</Table>
+						</Stack>
+					</section>
+
+					<section className="page-section">
+						<Stack gap="lg">
+							<Stack gap={4}>
+								<Text className="eyebrow">What you get</Text>
+								<Title order={2}>
+									Competitor pages stay simple
+								</Title>
+							</Stack>
+
+							<ul className="basic-list">
+								{competitorPageNotes.map((note) => (
+									<li key={note}>{note}</li>
+								))}
+							</ul>
+						</Stack>
+					</section>
+				</SimpleGrid>
+
+				<section className="page-section">
+					<Stack gap="lg">
+						<Group justify="space-between" align="end" gap="md">
+							<Stack gap={4}>
+								<Text className="eyebrow">
 									Leaderboard preview
 								</Text>
 								<Title order={2}>
@@ -198,17 +217,11 @@ function HomePage() {
 								search={{ scope: DEFAULT_SCOPE }}
 								className="no-underline"
 							>
-								<Button variant="light" color="teal">
-									View top 100
-								</Button>
+								<Button variant="default">View top 100</Button>
 							</Link>
 						</Group>
 
-						<Table
-							highlightOnHover
-							withTableBorder
-							withColumnBorders={false}
-						>
+						<Table highlightOnHover withTableBorder>
 							<thead>
 								<tr>
 									<th>Rank</th>
@@ -230,7 +243,10 @@ function HomePage() {
 												}}
 												className="no-underline"
 											>
-												<Text fw={700} c="teal.7">
+												<Text
+													fw={700}
+													c="var(--accent)"
+												>
 													{entry.name}
 												</Text>
 											</Link>
@@ -241,48 +257,8 @@ function HomePage() {
 								))}
 							</tbody>
 						</Table>
-					</Paper>
-
-					<Paper className="island-shell" p="xl">
-						<Stack gap="md">
-							<Text
-								size="xs"
-								tt="uppercase"
-								fw={700}
-								c="var(--kicker)"
-							>
-								How it works
-							</Text>
-							<Title order={2}>
-								What you will see on each competitor page
-							</Title>
-							<Stack gap="sm">
-								<Text size="sm" c="dimmed">
-									Visited-region totals based on official WCA
-									competition history within the selected
-									scope.
-								</Text>
-								<Text size="sm" c="dimmed">
-									Every region in exactly one bucket: visited
-									or unvisited.
-								</Text>
-								<Text size="sm" c="dimmed">
-									The last three historical competitions
-									available for each region.
-								</Text>
-								<Text size="sm" c="dimmed">
-									A scope-specific leaderboard ordered by
-									visited region count.
-								</Text>
-								<Text size="sm" c="dimmed">
-									A clear degraded state if the historical
-									dataset is unavailable in the current
-									runtime.
-								</Text>
-							</Stack>
-						</Stack>
-					</Paper>
-				</SimpleGrid>
+					</Stack>
+				</section>
 			</Stack>
 		</Container>
 	);
